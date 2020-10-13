@@ -22,8 +22,10 @@ let search_waiting=false, last_song = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
 let queue_global = {title:[],url:[]};
 let filter;
-const BotId = "708065683971506186";
+const botId = config.botId;
+
 /*
+
 -----------------------------------------------------------------
 Biblioteca: https://discord.js.org/#/
 Guias: https://discordjs.guide/ e https://anidiots.guide/
@@ -42,9 +44,13 @@ BUGS
 
 CONCLUIDOS
 
-
 -------------------------------------------------------------------
 */
+
+//Events
+process.on('unhandledRejection', error => {
+	console.error('Uncaught Promise Rejection', error)
+});
 
 client.once('ready', () => {
 	console.log('Ready! ');
@@ -52,15 +58,11 @@ client.once('ready', () => {
 
 client.login(config.token);
 
-process.on('unhandledRejection', error => console.error('Uncaught Promise Rejection', error));
-
 client.on('message', message => {
-		
 	//console.log(message.channel.messages.cache.array()[0].id);
 
 	CheckName(message.author.username,message.author.discriminator);
 	Comandos(message);
-
 });
 
 client.on('message', async message => {
@@ -78,11 +80,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 	})
 	//console.log(voiceUsers);
 	//console.log(voiceUsers.length);
-	if(voiceUsers.length === 1 && voiceUsers[0] === BotId){
+	if(voiceUsers.length === 1 && voiceUsers[0] === botId){
 		Leave(voice_global);
 	}
 });
 
+//Message
 async function Comandos(msg){
 	
 	Fubuki_Adm(msg);
@@ -351,6 +354,8 @@ function CheckName(author,tag){
 	}
 
 }
+
+//Voice
 async function Voice(msg){
 	if(msg.channel.type == 'dm'){
 		//Verifica se a mensagem é uma DM
@@ -358,9 +363,11 @@ async function Voice(msg){
 	};
 	// Verifica o voice channel de quem mandou a mensagem
 	let voiceChannel = msg.member.voice.channel;
+	const command = msg.content.toLowerCase().split(' ')[0];
 	//console.log(voiceChannel)
+
 	//Play
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'play'){
+	if(command === config.prefix+'play'){
 
 		var url = msg.content.split(' ')[1];
 		//console.log("mensagem: "+message.content+"\ncomando: "+message.content.toLowerCase().split(' ')[0]+"\nurl: "+url);
@@ -419,7 +426,7 @@ async function Voice(msg){
 		}
 	}
 	//Search
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'search'){
+	if(command === config.prefix+'search'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -466,7 +473,7 @@ async function Voice(msg){
 		});
 	}
 	//Search Result
-	if(search_waiting == true && parseInt(msg.content) > 0){
+	if(search_waiting === true && parseInt(msg.content) > 0){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -480,12 +487,12 @@ async function Voice(msg){
 		search_waiting = false;
 	}
 	//Leave
-	if(msg.content.toLowerCase() == config.prefix+'leave'){
+	if(msg.content.toLowerCase() === config.prefix+'leave'){
 		const voice = voiceChannel === null? voice_global : voiceChannel;
 		Leave(voice);
 	}
 	//Next
-	if(msg.content.toLowerCase() == config.prefix+'next'){
+	if(msg.content.toLowerCase() === config.prefix+'next'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -504,7 +511,7 @@ async function Voice(msg){
 		}
 	}
 	//Previous
-	if(msg.content.toLowerCase() == config.prefix+'previous'){
+	if(msg.content.toLowerCase() === config.prefix+'previous'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -523,7 +530,7 @@ async function Voice(msg){
 		}
 	}
 	//Queue
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'queue'){
+	if(command === config.prefix+'queue'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -571,7 +578,7 @@ async function Voice(msg){
 		}
 	}
 	//Add
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'add'){
+	if(command === config.prefix+'add'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -650,7 +657,7 @@ async function Voice(msg){
 		
 	}
 	//Clean
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'clean'){
+	if(command === config.prefix+'clean'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
@@ -669,7 +676,7 @@ async function Voice(msg){
 		msg.channel.send("Queue cleaned!");
 	}
 	//Pause
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'pause'){
+	if(command === config.prefix+'pause'){
 		if(paused_global != 1){
 			define_musica(voiceChannel,1);
 			msg.channel.send("<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>");
@@ -742,6 +749,28 @@ function Search_Video(name){
 		}, 1000);
 	});
 }
+function Leave(voice){
+	try{
+		define_musica(voice,1);
+		voice_global.leave();
+	}
+	catch(error){
+		console.log("------ ERRO NO LEAVE ------")
+		console.log(error);
+	}
+}
+async function CurrentPlayingEmbed(channel,url_current,index){
+
+	const video = await ytdl.getBasicInfo(url_current);
+	const CurrentPlayingEmbed = new Discord.MessageEmbed();
+	CurrentPlayingEmbed.setColor("#0099ff");
+	CurrentPlayingEmbed.setTitle("Current Playing Song "+index);
+	CurrentPlayingEmbed.setDescription(video.videoDetails.title);
+	CurrentPlayingEmbed.setImage(video.videoDetails.thumbnail.thumbnails[4].url);
+	channel.send(CurrentPlayingEmbed);
+}
+
+//Functions
 function GetId(id){
 	var channel_id = id;
 	if(id.toLowerCase() == "massagens"){
@@ -759,16 +788,6 @@ function GetId(id){
 	//console.log(channel_id);
 	return channel_id;
 }
-async function CurrentPlayingEmbed(channel,url_current,index){
-
-	const video = await ytdl.getBasicInfo(url_current);
-	const CurrentPlayingEmbed = new Discord.MessageEmbed();
-	CurrentPlayingEmbed.setColor("#0099ff");
-	CurrentPlayingEmbed.setTitle("Current Playing Song "+index);
-	CurrentPlayingEmbed.setDescription(video.videoDetails.title);
-	CurrentPlayingEmbed.setImage(video.videoDetails.thumbnail.thumbnails[4].url);
-	channel.send(CurrentPlayingEmbed);
-}
 function MongoSelect(query,collection,projection_received){
 
 	return new Promise(result => {
@@ -784,14 +803,3 @@ function MongoSelect(query,collection,projection_received){
 		}, 1000);
 	});
 }
-function Leave(voice){
-	try{
-		define_musica(voice,1);
-		voice_global.leave();
-	}
-	catch(error){
-		console.log(error);
-	}
-}
-
-

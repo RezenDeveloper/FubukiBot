@@ -1,5 +1,6 @@
 {
 	"prefix": "!", 
 	"token": "",
-	"mongo_url": ""
+	"mongo_url": "",
+	"botId":"708065683971506186"
 }
