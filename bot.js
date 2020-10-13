@@ -58,15 +58,15 @@ client.once('ready', () => {
 
 client.login(config.token);
 
-client.on('message', message => {
-	//console.log(message.channel.messages.cache.array()[0].id);
-
+client.on('message', async message => {
 	CheckName(message.author.username,message.author.discriminator);
 	Comandos(message);
-});
 
-client.on('message', async message => {
-	Voice(message);
+	let voiceCommand = message.content.toLowerCase().split(' ')[0].split('').slice(1).join('')
+	voiceCommand = config.voiceCommands.includes(voiceCommand)? message.content.toLowerCase().split(' ')[0] : false;
+	if(voiceCommand){
+		Voice(message,voiceCommand);
+	}
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
@@ -106,15 +106,17 @@ async function Comandos(msg){
 											"**"+config.prefix+"d5** - Roll the D5 \n"+
 											"**"+config.prefix+"d20** - Roll the D20 \n"+
 											"**"+config.prefix+"d100** - Roll the D100", inline: true },
-			{ name: 'Voice Commands', value: "**"+config.prefix+"play url/name** - I will sing it for you! \n"+
-											 "**"+config.prefix+"PlayPlaylist name** - Play a playlist from my database\n"+
+			{ name: 'Voice Commands', value: "**"+config.prefix+"play (url/name)** - I will sing it for you! \n"+
+											 "**"+config.prefix+"pause** - Toki wo Tomare!\n"+
+											 "**"+config.prefix+"PlayPlaylist (name)** - Play a playlist from my database\n"+
 											 "**"+config.prefix+"leave** - I will leave the voice \n"+
 											 "**"+config.prefix+"next** - Next song of the playlist/queue \n"+
 											 "**"+config.prefix+"previous** - Previous song of the playlist/queue\n"+
-											 "**"+config.prefix+"search name** - Search some musics!\n"+
+											 "**"+config.prefix+"shuffle** - Shuffle the playlist/queue\n"+
+											 "**"+config.prefix+"search (name)** - Search some musics!\n"+
 											 "**"+config.prefix+"queue** - Show the current playing songs!\n"+
 											 "**"+config.prefix+"queue (number)** - Play the specific playlist song\n"+
-											 "**"+config.prefix+"clean** - Clean the current playing queue\n"+
+											 "**"+config.prefix+"clear** - Clear the current playing queue\n"+
 											 "**"+config.prefix+"add url/name** - Add a song to the end of the queue\n", inline: true },
 		)
 		msg.channel.send(HelpEmbed);
@@ -356,14 +358,21 @@ function CheckName(author,tag){
 }
 
 //Voice
-async function Voice(msg){
+async function Voice(msg,command){
 	if(msg.channel.type == 'dm'){
 		//Verifica se a mensagem é uma DM
 		return;
 	};
+
 	// Verifica o voice channel de quem mandou a mensagem
 	let voiceChannel = msg.member.voice.channel;
-	const command = msg.content.toLowerCase().split(' ')[0];
+	voiceChannel = voiceChannel === null ? voice_global: voiceChannel;
+
+	if (!voiceChannel && command) {
+		msg.reply('Please join a voice channel first '+nickname+'!');
+		return;
+	}
+
 	//console.log(voiceChannel)
 
 	//Play
@@ -372,10 +381,6 @@ async function Voice(msg){
 		var url = msg.content.split(' ')[1];
 		//console.log("mensagem: "+message.content+"\ncomando: "+message.content.toLowerCase().split(' ')[0]+"\nurl: "+url);
 
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
-		}
 		//Playlist
 		if(ytpl.validateID(url)==true){
 			//console.log("playlist detected");
@@ -472,10 +477,6 @@ async function Voice(msg){
 	}
 	//Search Result
 	if(search_waiting === true && parseInt(msg.content) > 0){
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
-		}
 		queue_global[0].url = search_global.items[(msg.content-1)].link;
 		queue_global[0].title = search_global.items[(msg.content-1)].title;
 		queue_tamanho = 1;
@@ -486,54 +487,38 @@ async function Voice(msg){
 	}
 	//Leave
 	if(msg.content.toLowerCase() === config.prefix+'leave'){
-		const voice = voiceChannel === null? voice_global : voiceChannel;
-		Leave(voice);
+		Leave(voiceChannel);
 	}
 	//Next
 	if(msg.content.toLowerCase() === config.prefix+'next'){
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
+		if(queue_number < queue_tamanho){
+			queue_number++;
+			define_musica(voiceChannel,0);
+			msg.channel.send("Next song!");
+			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
 		}
 		else{
-			if(queue_number < queue_tamanho){
-				queue_number++;
-				define_musica(voiceChannel,0);
-				msg.channel.send("Next song!");
-				CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
-			}
-			else{
-				msg.channel.send("This is the last song");
-			}
-			//console.log("tamanho: "+queue_tamanho+"  number: "+queue_number);
+			msg.channel.send("This is the last song");
 		}
+		//console.log("tamanho: "+queue_tamanho+"  number: "+queue_number);
 	}
 	//Previous
 	if(msg.content.toLowerCase() === config.prefix+'previous'){
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
+		
+		if(queue_number > 1){
+			queue_number--;
+			define_musica(voiceChannel,0);
+			msg.channel.send("Previous song!");
+			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
 		}
 		else{
-			if(queue_number > 1){
-				queue_number--;
-				define_musica(voiceChannel,0);
-				msg.channel.send("Previous song!");
-				CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
-			}
-			else{
-				msg.channel.send("This is the first song");
-			}
-			//console.log("tamanho: "+queue_tamanho+"  number: "+queue_number);
+			msg.channel.send("This is the first song");
 		}
+		//console.log("tamanho: "+queue_tamanho+"  number: "+queue_number);
 	}
 	//Queue
 	if(command === config.prefix+'queue'){
-		console.log(queue_global.length)
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
-		}
+		//console.log(queue_global.length)
 		if(queue_global.length === 0){
 			msg.channel.send("There's no queue to show");
 			return;
@@ -578,10 +563,6 @@ async function Voice(msg){
 	}
 	//Add
 	if(command === config.prefix+'add'){
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
-		}
 		var url = msg.content.split(' ')[1];
 		if(ytpl.validateID(url)==false){
 			if(ytdl.validateURL(url)==true){
@@ -632,11 +613,10 @@ async function Voice(msg){
 
 				for(var count = currentsize;count<(listsize+currentsize);count++){
 					//console.log("Titulo["+count+"]: "+playlist.items[(count-1)].title);
-					queue_global[count].title = playlist.items[(count-currentsize)].title;
-					queue_global[count].url = playlist.items[(count-currentsize)].url_simple;
+					queue_global.push({title: playlist.items[count-currentsize].title, url: playlist.items[count-currentsize].url_simple})
 				}
 				//console.log(queue_global);
-				
+				msg.channel.send("Added the playlist: **"+playlist.title+"** to the queue");
 				if(queue_global.length == listsize){
 					queue_number = 1;
 					queue_tamanho = listsize;
@@ -656,10 +636,6 @@ async function Voice(msg){
 	}
 	//Clean
 	if(command === config.prefix+'clear'){
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
-		}
 		if(queue_tamanho==0){
 			msg.channel.send("There is no queue to clear!");
 			return;
@@ -701,6 +677,7 @@ async function Voice(msg){
 		else{
 			define_musica(voiceChannel,0);
 			msg.channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>");
+			paused_global = 0;
 		}
 	}
 }
@@ -721,7 +698,7 @@ function define_musica(voiceChannel,pause){
 		}
 		dispatcher.on('finish',function(){ 
 			//console.log('finished');
-			console.log('number: '+queue_number+" tamanho "+queue_tamanho);
+			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
 			if(queue_number < queue_global.length){
 				queue_number = queue_number+1;
 				define_musica(voiceChannel,0);

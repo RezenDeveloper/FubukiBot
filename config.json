@@ -2,5 +2,18 @@
 	"prefix": "!", 
 	"token": "",
 	"mongo_url": "",
-	"botId":"708065683971506186"
+	"botId":"708065683971506186",
+	"voiceCommands":[
+		"play",
+		"pause",
+		"playplaylist",
+		"leave",
+		"next",
+		"previous",
+		"shuffle",
+		"search",
+		"queue",
+		"clear",
+		"add"
+	]
 }
