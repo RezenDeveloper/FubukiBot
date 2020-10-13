@@ -203,13 +203,12 @@ async function Comandos(msg){
 	}
 	//playplaylist
 	if (msg.content.split(' ')[0].toLowerCase() == config.prefix+'playplaylist' || msg.content.split(' ')[0].toLowerCase() == config.prefix+'pp') {
-		
 		try{
 			var music = msg.content.split(' ')[1].toLowerCase();
 			var result = await MongoSelect({name: music},"playlists",{_id: 0,url: 1});
 			const fakemessage = msg;
 			fakemessage.content = config.prefix+"play "+result[0].url;
-			Voice(fakemessage);
+			Voice(fakemessage,config.prefix+"play");
 		}
 		catch(error){
 			msg.channel.send("Sorry, i couldn't find this playlist on my database");
