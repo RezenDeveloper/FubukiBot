@@ -20,7 +20,7 @@ if(process.env.OFFLINE == "true"){
 let nickname="", reply="", name_status="", search_global="", voice_global="";
 let search_waiting=false, last_song = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
-let queue_global = {title:[],url:[]};
+let queue_global = [];
 let filter;
 const botId = config.botId;
 
@@ -391,8 +391,7 @@ async function Voice(msg){
 				}
 				var listsize = playlist.items.length;
 				for(var count = 0;count<listsize;count++){
-					queue_global.title[count] = playlist.items[count].title;
-					queue_global.url[count] = playlist.items[count].url_simple;
+					queue_global.push({title: playlist.items[count].title, url: playlist.items[count].url_simple})
 				}
 				define_musica(voiceChannel,0);
 			}).catch(err => {
@@ -403,9 +402,8 @@ async function Voice(msg){
 		//Video
 		else{
 			if(ytdl.validateURL(url)==true){
-				queue_global.url = [url];
 				const video = await ytdl.getBasicInfo(url);
-				queue_global.title = [video.videoDetails.title];
+				queue_global[0] = {title:video.videoDetails.title,url:url}
 				queue_tamanho = 1;
 				queue_number = 1;
 
@@ -415,12 +413,12 @@ async function Voice(msg){
 				var name = msg.content.replace(msg.content.split(' ')[0],'');
 				var video = await Search_Video(name);
 				//console.log(video);
-				queue_global.url = [video.link];
-				queue_global.title = [video.title];
+				queue_global[0] = {title: video.title,url:video.link}
+				console.log(queue_global)
 				queue_tamanho = 1;
 				queue_number = 1;
 				define_musica(voiceChannel,0);
-				msg.channel.send("Playing: "+video.title);
+				msg.channel.send("Playing: **"+video.title+"**");
 			}
 			
 		}
@@ -478,8 +476,8 @@ async function Voice(msg){
 			msg.reply('Please join a voice channel first!');
 			return;
 		}
-		queue_global.url = [search_global.items[(msg.content-1)].link];
-		queue_global.title = [search_global.items[(msg.content-1)].title];
+		queue_global[0].url = search_global.items[(msg.content-1)].link;
+		queue_global[0].title = search_global.items[(msg.content-1)].title;
 		queue_tamanho = 1;
 		queue_number = 1;
 		define_musica(voiceChannel,0);
@@ -502,7 +500,7 @@ async function Voice(msg){
 				queue_number++;
 				define_musica(voiceChannel,0);
 				msg.channel.send("Next song!");
-				CurrentPlayingEmbed(msg.channel,queue_global.url[(queue_number-1)],queue_number);
+				CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
 			}
 			else{
 				msg.channel.send("This is the last song");
@@ -521,7 +519,7 @@ async function Voice(msg){
 				queue_number--;
 				define_musica(voiceChannel,0);
 				msg.channel.send("Previous song!");
-				CurrentPlayingEmbed(msg.channel,queue_global.url[(queue_number-1)],queue_number);
+				CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
 			}
 			else{
 				msg.channel.send("This is the first song");
@@ -531,11 +529,12 @@ async function Voice(msg){
 	}
 	//Queue
 	if(command === config.prefix+'queue'){
+		console.log(queue_global.length)
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
 		}
-		if(queue_global.url.length==0){
+		if(queue_global.length === 0){
 			msg.channel.send("There's no queue to show");
 			return;
 		}
@@ -551,24 +550,24 @@ async function Voice(msg){
 			FieldsEmbed.setElementsPerPage(10);
 			FieldsEmbed.setAuthorizedUsers([]);
 			var array = [];
-			array.length = queue_global.url.length;
+			array.length = queue_global.length;
 			for(count=0;count<array.length;count++){
 				array[count] = count;
 			}
 			FieldsEmbed.setArray(array);
-			FieldsEmbed.formatField('Musics', i => "**Song "+ (i+1) +"** -- "+queue_global.title[i]);
+			FieldsEmbed.formatField('Musics', i => "**Song "+ (i+1) +"** -- "+queue_global[i].title);
 			FieldsEmbed.setDisabledNavigationEmojis(['delete','jump']);
 			FieldsEmbed.setTimeout(0);	
 			FieldsEmbed.build();
 			index = queue_number;
-			url_current = queue_global.url[(queue_number-1)];
+			url_current = queue_global[(queue_number-1)].url;
 		
 			CurrentPlayingEmbed(msg.channel,url_current,index);
 		}
 		else{
 			if(number <= queue_tamanho && number>0){
 				queue_number = number;
-				url_current = queue_global.url[(queue_number-1)];
+				url_current = queue_global[(queue_number-1)].url;
 				define_musica(voiceChannel,0);
 				CurrentPlayingEmbed(msg.channel,url_current,queue_number);
 			}
@@ -588,11 +587,11 @@ async function Voice(msg){
 			if(ytdl.validateURL(url)==true){
 			
 				//Adiciona a url no vetor queue
-				queue_global.url.push(url);
 				//console.log(queue_global.url);
 				const video = await ytdl.getBasicInfo(url);
-				queue_global.title.push(video.videoDetails.title);
-				if(queue_global.url.length==1){
+				queue_global.push({title: video.videoDetails.title,url:url});
+				msg.channel.send("Added: **"+video.videoDetails.title+"** to the queue");
+				if(queue_global.length==1){
 					queue_number = 1;
 					queue_tamanho = 1;
 					define_musica(voiceChannel,0);
@@ -606,10 +605,9 @@ async function Voice(msg){
 			else{
 				var url = msg.content.replace(msg.content.split(' ')[0],'');
 				var video = await Search_Video(url);
-				queue_global.url.push(video.link);
-				queue_global.title.push(video.title);
+				queue_global.push({title:video.title,url:video.link});
 				msg.channel.send("Added: **"+video.title+"** to the queue");
-				if(queue_global.url.length==1){
+				if(queue_global.length==1){
 					queue_number = 1;
 					queue_tamanho = 1;
 					define_musica(voiceChannel,0);
@@ -620,7 +618,7 @@ async function Voice(msg){
 					last_song = false;
 				}
 			}
-			queue_tamanho = queue_global.url.length;
+			queue_tamanho = queue_global.length;
 		}
 		else{
 			const id = await ytpl.getPlaylistID(url)
@@ -628,18 +626,18 @@ async function Voice(msg){
 				//console.log(playlist);
 
 				var listsize = playlist.items.length;
-				var currentsize = queue_global.title.length;
+				var currentsize = queue_global.length;
 				
 				//console.log(queue_global.title[queue_global.title.length]);
 
 				for(var count = currentsize;count<(listsize+currentsize);count++){
 					//console.log("Titulo["+count+"]: "+playlist.items[(count-1)].title);
-					queue_global.title[count] = playlist.items[(count-currentsize)].title;
-					queue_global.url[count] = playlist.items[(count-currentsize)].url_simple;
+					queue_global[count].title = playlist.items[(count-currentsize)].title;
+					queue_global[count].url = playlist.items[(count-currentsize)].url_simple;
 				}
 				//console.log(queue_global);
 				
-				if(queue_global.url.length==listsize){
+				if(queue_global.length == listsize){
 					queue_number = 1;
 					queue_tamanho = listsize;
 					define_musica(voiceChannel,0);
@@ -649,7 +647,7 @@ async function Voice(msg){
 					define_musica(voiceChannel,0);
 					last_song = false;
 				}
-				queue_tamanho = queue_global.title.length;
+				queue_tamanho = queue_global.length;
 			}).catch(err => {
 				console.log(err);
 			});
@@ -657,13 +655,13 @@ async function Voice(msg){
 		
 	}
 	//Clean
-	if(command === config.prefix+'clean'){
+	if(command === config.prefix+'clear'){
 		if (!voiceChannel) {
 			msg.reply('Please join a voice channel first!');
 			return;
 		}
 		if(queue_tamanho==0){
-			msg.channel.send("The queue is already clean");
+			msg.channel.send("There is no queue to clear!");
 			return;
 		}
 		if(paused_global == 0){
@@ -671,9 +669,28 @@ async function Voice(msg){
 		}
 		queue_number = 0;
 		queue_tamanho = 0;
-		queue_global.title = [];
-		queue_global.url = [];
+		queue_global = [];
 		msg.channel.send("Queue cleaned!");
+	}
+	//Shuffle
+	if(command === config.prefix+'shuffle'){
+		if(queue_global.length === 0){
+			msg.channel.send("I can't shuffle nothing!");
+			return;
+		}
+		if(queue_global.length === 1){
+			msg.channel.send("I can't shuffle one video!");
+			return;
+		}
+		let randomQueue = queue_global
+			.map((a,i) => ({sort: Math.random(), value: a}))
+			.sort((a, b) => a.sort - b.sort)
+			.map((a) => {
+				return a.value
+			})
+		queue_global = randomQueue;
+		define_musica(voiceChannel,0);
+		msg.channel.send("Shuffled!");
 	}
 	//Pause
 	if(command === config.prefix+'pause'){
@@ -690,8 +707,9 @@ async function Voice(msg){
 function define_musica(voiceChannel,pause){
 	voice_global = voiceChannel;
 	//console.log("index: "+(queue_number-1));
-	const musicUrl = queue_global.url[(queue_number-1)];
-	queue_tamanho = queue_global.url.length;
+	console.log(queue_global[(queue_number-1)])
+	const musicUrl = queue_global[(queue_number-1)].url;
+	queue_tamanho = queue_global.length;
 
 	voiceChannel.join().then(connection => {
 
@@ -704,7 +722,7 @@ function define_musica(voiceChannel,pause){
 		dispatcher.on('finish',function(){ 
 			//console.log('finished');
 			console.log('number: '+queue_number+" tamanho "+queue_tamanho);
-			if(queue_number < queue_global.url.length){
+			if(queue_number < queue_global.length){
 				queue_number = queue_number+1;
 				define_musica(voiceChannel,0);
 			}
@@ -751,7 +769,9 @@ function Search_Video(name){
 }
 function Leave(voice){
 	try{
-		define_musica(voice,1);
+		if(queue_global.length > 0){
+			define_musica(voice,1);
+		}
 		voice_global.leave();
 	}
 	catch(error){
