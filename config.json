@@ -15,6 +15,7 @@
 		"search",
 		"queue",
 		"clear",
-		"add"
+		"add",
+		"time"
 	]
 }

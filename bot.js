@@ -16,8 +16,10 @@ config.token = process.env.TOKEN;
 let nickname="", reply="", name_status="", search_global="", voice_global="";
 let search_waiting=false, last_song = false, offline = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
-let queue_global = [], dispatcherGlobal;
+let queue_global = [];
+let time = {current:0,total:0};
 const botId = config.botId;
+let updateMessage;
 
 /*
 
@@ -476,6 +478,7 @@ async function Voice(msg,command){
 	}
 	//Next
 	if(msg.content.toLowerCase() === config.prefix+'next'){
+		queue_tamanho = queue_global.length
 		if(queue_number < queue_tamanho){
 			queue_number++;
 			define_musica(voiceChannel,0);
@@ -489,7 +492,7 @@ async function Voice(msg,command){
 	}
 	//Previous
 	if(msg.content.toLowerCase() === config.prefix+'previous'){
-		
+		queue_tamanho = queue_global.length
 		if(queue_number > 1){
 			queue_number--;
 			define_musica(voiceChannel,0);
@@ -636,6 +639,22 @@ async function Voice(msg,command){
 		define_musica(voiceChannel,0);
 		msg.channel.send("Shuffled!");
 	}
+	//Time
+	if(command === config.prefix+'time'){
+		if(queue_global.length === 0){
+			msg.channel.send("There's no time to show");
+			return;
+		}
+		let {current,total} = time
+		const editMessage = await msg.channel.send(`${current.toString().toHHMMSS()} of ${total.toString().toHHMMSS()}`);
+		if(updateMessage !== undefined){
+			clearTimeout(updateMessage);
+		}
+		updateMessage = setInterval(() => {
+			const {current,total} = time;
+			editMessage.edit(`${current.toString().toHHMMSS()} of ${total.toString().toHHMMSS()}`)
+		}, 1000);
+	}
 	//Pause
 	if(command === config.prefix+'pause'){
 		if(paused_global != 1){
@@ -652,10 +671,10 @@ async function Voice(msg,command){
 function define_musica(voiceChannel,pause){
 	voice_global = voiceChannel;
 	queue_tamanho = queue_global.length;
-	let time = 0;
+	let Dispatchertime = 0;
 	//console.log("index: "+(queue_number-1));
-	//console.log(queue_global[(queue_number-1)])
 	const music = queue_global[(queue_number-1)];
+	console.log(queue_global)
 	
 
 	voiceChannel.join().then(connection => {
@@ -665,9 +684,10 @@ function define_musica(voiceChannel,pause){
 		if(pause==1){
 			dispatcher.pause();
 			paused_global = 1;
+			clearTimeout(updateMessage);
 		}
 		dispatcher.on('speaking', () => {
-			time = dispatcher.streamTime;
+			Dispatchertime = dispatcher.streamTime;
 		})
 		dispatcher.on('finish',function(){
 			//console.log('finished');
@@ -686,7 +706,8 @@ function define_musica(voiceChannel,pause){
 		});
 	});
 	const interval = setInterval(() => {
-		dispatcherTime(music,time)
+		const current = Math.floor(Dispatchertime/1000)
+		time = {current:current,total:music.seconds}
 	}, 1000);
 }
 function Leave(voice){
@@ -733,17 +754,25 @@ function ToSeconds(time){
 }
 function MusicStatus(music,pause,time){
 	if(pause === 0){
-		client.user.setActivity(`${music.title}\n${minutes}:${seconds}`, { type: 'LISTENING' });
+		client.user.setActivity(`${music.title}`, { type: 'LISTENING' });
 	}
 	else{
 		client.user.setActivity("");
 	}
 }
-function dispatcherTime(music,time){
-	const seconds = Math.floor(time/1000)
-	const minutes = Math.floor(seconds/60)
-	console.log(`${minutes}:${seconds}`)
+
+String.prototype.toHHMMSS = function () {
+    var sec_num = parseInt(this, 10);
+    var hours   = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return hours+':'+minutes+':'+seconds;
 }
+
 //Requests
 function MongoSelect(query,collection,projection_received){
 
