@@ -3,6 +3,7 @@
 	"token": "",
 	"mongo_url": "",
 	"botId":"708065683971506186",
+	"testVoiceChannelId":"708082957524664385",
 	"voiceCommands":[
 		"play",
 		"pause",

@@ -12,13 +12,9 @@ var MongoClient = require('mongodb').MongoClient;
 
 config.mongo_url = process.env.DATABASE_URL;
 config.token = process.env.TOKEN;
-if(process.env.OFFLINE == "true"){
-	config.prefix = "/";
-	console.log("Running local");
-}
 
 let nickname="", reply="", name_status="", search_global="", voice_global="";
-let search_waiting=false, last_song = false;
+let search_waiting=false, last_song = false, offline = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
 let queue_global = [];
 let filter;
@@ -51,19 +47,34 @@ CONCLUIDOS
 process.on('unhandledRejection', error => {
 	console.error('Uncaught Promise Rejection', error)
 });
+client.login(config.token);
 
 client.once('ready', () => {
 	console.log('Ready! ');
+	if(process.env.OFFLINE == "true"){
+		config.prefix = "/";
+		console.log("Running local");
+		client.channels.fetch(config.testVoiceChannelId)
+			.then(channel => {
+				voice_global = channel;
+			})
+			.catch(console.error);
+		offline = true; 
+	}
 });
-
-client.login(config.token);
 
 client.on('message', async message => {
 	CheckName(message.author.username,message.author.discriminator);
 	Comandos(message);
 
-	let voiceCommand = message.content.toLowerCase().split(' ')[0].split('').slice(1).join('')
-	voiceCommand = config.voiceCommands.includes(voiceCommand)? message.content.toLowerCase().split(' ')[0] : false;
+	let voiceCommand = message.content.toLowerCase().split(' ')[0].split('').slice(1).join('') 
+	let prefix = message.content.toLowerCase().split(' ')[0].split('')[0]
+	if(config.voiceCommands.includes(voiceCommand) && prefix === config.prefix){
+		voiceCommand = message.content.toLowerCase().split(' ')[0];
+	}
+	else{
+		voiceCommand = false
+	}
 	if(voiceCommand){
 		Voice(message,voiceCommand);
 	}
@@ -80,7 +91,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 	})
 	//console.log(voiceUsers);
 	//console.log(voiceUsers.length);
-	if(voiceUsers.length === 1 && voiceUsers[0] === botId){
+	if(voiceUsers.length === 1 && voiceUsers[0] === botId && !offline){
 		Leave(voice_global);
 	}
 });
@@ -365,9 +376,10 @@ async function Voice(msg,command){
 
 	// Verifica o voice channel de quem mandou a mensagem
 	let voiceChannel = msg.member.voice.channel;
-	voiceChannel = voiceChannel === null ? voice_global: voiceChannel;
 
-	if (!voiceChannel && command) {
+	voiceChannel = voiceChannel === null ? voice_global : voiceChannel;
+	if (voiceChannel === null) {
+		console.log('null')
 		msg.reply('Please join a voice channel first '+nickname+'!');
 		return;
 	}
@@ -394,9 +406,8 @@ async function Voice(msg,command){
 					queue_number = 1;
 				}
 				var listsize = playlist.items.length;
-				for(var count = 0;count<listsize;count++){
-					queue_global.push({title: playlist.items[count].title, url: playlist.items[count].url_simple})
-				}
+				//console.log(playlist)
+				AddPlaylist(playlist);
 				define_musica(voiceChannel,0);
 			}).catch(err => {
 				console.log(err);
@@ -429,10 +440,6 @@ async function Voice(msg,command){
 	}
 	//Search
 	if(command === config.prefix+'search'){
-		if (!voiceChannel) {
-			msg.reply('Please join a voice channel first!');
-			return;
-		}
 		var search = msg.content.replace(msg.content.split(' ')[0],'');
 		ytsr.getFilters(search, function(err, filters) {
 			//seleciona os filtros disponíveis
@@ -798,4 +805,17 @@ function MongoSelect(query,collection,projection_received){
 			});
 		}, 1000);
 	});
+}
+function AddMusic(){
+
+}
+function AddPlaylist(playlist){
+	let queue = playlist.items.map((element) => {
+		return {title: element.title, url: element.url_simple}
+	})
+	console.log(queue)
+	
+}
+function MusicStatus(){
+	client.user.setActivity("", { type: 'PLAYING' });
 }
