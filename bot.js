@@ -785,7 +785,7 @@ function MongoSelect(query,collection,projection_received){
 					result(data);
 				});
 			});
-		}, 1000);
+		}, 5000);
 	});
 }
 function AddMusic(url){
