@@ -17,7 +17,6 @@ let nickname="", reply="", name_status="", search_global="", voice_global="";
 let search_waiting=false, last_song = false, offline = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
 let queue_global = [];
-let filter;
 const botId = config.botId;
 
 /*
@@ -69,7 +68,7 @@ client.on('message', async message => {
 
 	let voiceCommand = message.content.toLowerCase().split(' ')[0].split('').slice(1).join('') 
 	let prefix = message.content.toLowerCase().split(' ')[0].split('')[0]
-	if(config.voiceCommands.includes(voiceCommand) && prefix === config.prefix){
+	if((config.voiceCommands.includes(voiceCommand) && prefix === config.prefix) || search_waiting){
 		voiceCommand = message.content.toLowerCase().split(' ')[0];
 	}
 	else{
@@ -389,106 +388,86 @@ async function Voice(msg,command){
 	//Play
 	if(command === config.prefix+'play'){
 
-		var url = msg.content.split(' ')[1];
+		const url = msg.content.split(' ')[1];
 		//console.log("mensagem: "+message.content+"\ncomando: "+message.content.toLowerCase().split(' ')[0]+"\nurl: "+url);
 
 		//Playlist
 		if(ytpl.validateID(url)==true){
-			//console.log("playlist detected");
-			const id = await ytpl.getPlaylistID(url)
-			ytpl(id).then(playlist => {
-				//Define o número da música atual
-				if(url.split('index=')[1]){
-					var index = new URL(url).searchParams.get('index');
-					queue_number = index;
-				}
-				else{
-					queue_number = 1;
-				}
-				var listsize = playlist.items.length;
-				//console.log(playlist)
-				AddPlaylist(playlist);
+			if(url.split('index=')[1]){
+				var index = new URL(url).searchParams.get('index');
+				queue_number = index;
+			}
+			else{
+				queue_number = 1;
+			}	
+			AddPlaylist(url).then(queue => {
+				queue_global = queue
 				define_musica(voiceChannel,0);
-			}).catch(err => {
-				console.log(err);
-			})
-				
+			}).catch(err => console.log(err));
+			
 		}
 		//Video
 		else{
 			if(ytdl.validateURL(url)==true){
-				const video = await ytdl.getBasicInfo(url);
-				queue_global[0] = {title:video.videoDetails.title,url:url}
-				queue_tamanho = 1;
-				queue_number = 1;
-
-				define_musica(voiceChannel,0);
+				AddMusic(url).then(queue => {
+					queue_global[0] = queue
+					define_musica(voiceChannel,0);
+				}).catch(err => console.log(err))
 			}
 			else{
-				var name = msg.content.replace(msg.content.split(' ')[0],'');
-				var video = await Search_Video(name);
-				//console.log(video);
-				queue_global[0] = {title: video.title,url:video.link}
-				console.log(queue_global)
-				queue_tamanho = 1;
-				queue_number = 1;
-				define_musica(voiceChannel,0);
-				msg.channel.send("Playing: **"+video.title+"**");
+				const name = msg.content.replace(msg.content.split(' ')[0],'');
+				Search_Video(name,1).then(queue => {
+					queue_global[0] = queue[0]
+					define_musica(voiceChannel,0);
+					msg.channel.send("Playing: **"+queue.title+"**");
+				}).catch(err => console.log(err));
 			}
-			
+			queue_number = 1;
 		}
 	}
 	//Search
 	if(command === config.prefix+'search'){
-		var search = msg.content.replace(msg.content.split(' ')[0],'');
-		ytsr.getFilters(search, function(err, filters) {
-			//seleciona os filtros disponíveis
-			if(err) throw err;
-			//console.log(filters);
-			//mostra os filtros
-			filter = filters.get('Type').find(o => o.name === 'Video');
-			//define filtro video
-			ytsr.getFilters(filter.ref, function(err, filters) {
-				if(err) throw err;
-				//filter = filters.get('Sort by').find(o => o.name.startsWith('Relevance'));
-				//define filtro Relevância - retorna null
-				var filtro = filter.ref.split("sp=")[0]+"sp=CAASAhAB";
-				//altera a url e adicona o filtro relevância
-				var options = {
-					limit: 20,
-					nextpageRef: filtro,
-				}
-				ytsr(null, options, function(err, searchResults) {
-					if(err) throw err;
+		const search = msg.content.replace(msg.content.split(' ')[0],'');
+		Search_Video(search,20).then(searchResults => {
+			search_global = searchResults
+			//console.log(searchResults.items);
+			const SearchEmbed = new Pagination.FieldsEmbed()
+			SearchEmbed.embed.setColor("#0099ff");
+			SearchEmbed.embed.setTitle("Search Results:");
+			SearchEmbed.setChannel(msg.channel);
+			SearchEmbed.setElementsPerPage(10);
+			SearchEmbed.setAuthorizedUsers([]);
+			var array = [];
+			array.length = searchResults.length;
+			for(count=0;count<array.length;count++){
+				array[count] = count;
+			}
+			SearchEmbed.setArray(array);
+			SearchEmbed.formatField('Musics', (i) => {
+				const time = searchResults[i].seconds;
+				const minutes = Math.floor(time/60) > 1? Math.floor(time/60):"00";
+				const seconds = time-(Math.floor(time/60)*60);
+				const hours = Math.floor(time / 3600) > 1? Math.floor(time / 3600) : "00";
 
-					search_global = searchResults;
-					//console.log(searchResults.items);
-					const SearchEmbed = new Pagination.FieldsEmbed()
-					SearchEmbed.embed.setColor("#0099ff");
-					SearchEmbed.embed.setTitle("Search Results:");
-					SearchEmbed.setChannel(msg.channel);
-					SearchEmbed.setElementsPerPage(5);
-					SearchEmbed.setAuthorizedUsers([]);
-					
-					SearchEmbed.setArray(searchResults.items);
-					SearchEmbed.formatField('Musics', i => "**Song "+ (searchResults.items.indexOf(i)+1) +"** "+i.title+" **"+i.duration.toString()+"**");
-					SearchEmbed.setDisabledNavigationEmojis(['delete','jump']);
-					SearchEmbed.build();	
-					SearchEmbed.setTimeout(120000);
-					search_waiting = true;
-					msg.channel.send("Digite the song number, " + nickname);
-				});
+				return `**Song ${(i+1)}** ${searchResults[i].title} **${hours}:${minutes}:${seconds}**`
 			});
-		});
+			SearchEmbed.setDisabledNavigationEmojis(['delete','jump']);
+			SearchEmbed.build();	
+			SearchEmbed.setTimeout(0);
+			search_waiting = true;
+			msg.channel.send("Digite the song number, " + nickname);
+		}).catch(err => console.log(err));
 	}
 	//Search Result
 	if(search_waiting === true && parseInt(msg.content) > 0){
-		queue_global[0].url = search_global.items[(msg.content-1)].link;
-		queue_global[0].title = search_global.items[(msg.content-1)].title;
-		queue_tamanho = 1;
+		const number = (msg.content-1);
+		const searchUrl = search_global[number].url;
+		const searchTitle = search_global[number].title;
+		const searchSeconds = search_global[number].seconds;
+		queue_global[0] = {title:searchTitle,url:searchUrl,seconds:searchSeconds}
 		queue_number = 1;
 		define_musica(voiceChannel,0);
-		msg.channel.send("Playing the song: "+search_global.items[(msg.content-1)].title);
+		msg.channel.send("Playing the song: "+search_global[number].title);
 		search_waiting = false;
 	}
 	//Leave
@@ -719,37 +698,6 @@ function define_musica(voiceChannel,pause){
 		});
 	});
 }
-function Search_Video(name){
-	return new Promise(video => {
-		setTimeout(() => {
-		  	//Escole o vídeo de acordo com o titulo
-			//seleciona todo o texto, até depois do espaço
-			ytsr.getFilters(name, function(err, filters) {
-				//seleciona os filtros disponíveis
-				if(err) throw err;
-				//console.log(filters);
-				//mostra os filtros
-				filter = filters.get('Type').find(o => o.name === 'Video');
-				//define filtro video
-				ytsr.getFilters(filter.ref, function(err, filters) {
-					if(err) throw err;
-					//filter = filters.get('Sort by').find(o => o.name.startsWith('Relevance'));
-					//define filtro Relevância - retorna null
-					var filtro = filter.ref.split("sp=")[0]+"sp=CAASAhAB";
-					//altera a url e adicona o filtro relevância
-					var options = {
-						limit: 1,
-						nextpageRef: filtro,
-					}
-					ytsr(null, options, function(err, searchResults) {
-						if(err) throw err;
-						video(searchResults.items[0]);
-					});
-				});
-			});
-		}, 1000);
-	});
-}
 function Leave(voice){
 	try{
 		if(queue_global.length > 0){
@@ -806,15 +754,37 @@ function MongoSelect(query,collection,projection_received){
 		}, 1000);
 	});
 }
-function AddMusic(){
+function AddMusic(url){
+	return ytdl.getBasicInfo(url).then(({videoDetails}) => {
+		const {title,video_url,lengthSeconds} = videoDetails
 
+		return {title:title,url:video_url,seconds:lengthSeconds}
+	}).catch(err => console.log("--Erro no AddMusic--\n"+err));
 }
-function AddPlaylist(playlist){
-	let queue = playlist.items.map((element) => {
-		return {title: element.title, url: element.url_simple}
-	})
-	console.log(queue)
-	
+function AddPlaylist(url){
+	return ytpl(url).then(({items}) => {
+		return items.map(({title,url_simple,duration}) => {
+			const seconds = ToSeconds(duration)
+			return {title:title, url:url_simple,seconds:seconds}
+		})
+	}).catch(err => console.log("--Erro no AddPlaylist--\n"+err))
+}
+function Search_Video(name,limit){
+	return ytsr.getFilters(name).then(async (filters1) => {
+		const filter1 = filters1.get('Type').find(o => o.name === 'Video');
+		const options = {
+			limit: limit,
+			nextpageRef: filter1.ref,
+		}
+		const {items} = await ytsr(null, options);
+		return items.map(value => {
+			const seconds = ToSeconds(value.duration)
+			return {title:value.title,url:value.link,seconds:seconds}
+		})
+	}).catch(err => {console.error(err);});
+}
+function ToSeconds(time){
+	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
 }
 function MusicStatus(){
 	client.user.setActivity("", { type: 'PLAYING' });
