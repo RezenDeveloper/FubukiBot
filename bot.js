@@ -400,8 +400,9 @@ async function Voice(msg,command){
 			else{
 				queue_number = 1;
 			}	
-			AddPlaylist(url).then(queue => {
-				queue_global = queue
+			AddPlaylist(url).then(playlist => {
+				queue_global = playlist.items
+				msg.channel.send("Playing the playlist **"+playlist.title+"**");
 				define_musica(voiceChannel,0);
 			}).catch(err => console.log(err));
 			
@@ -480,7 +481,7 @@ async function Voice(msg,command){
 			queue_number++;
 			define_musica(voiceChannel,0);
 			msg.channel.send("Next song!");
-			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
+			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)],queue_number);
 		}
 		else{
 			msg.channel.send("This is the last song");
@@ -494,7 +495,7 @@ async function Voice(msg,command){
 			queue_number--;
 			define_musica(voiceChannel,0);
 			msg.channel.send("Previous song!");
-			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)].url,queue_number);
+			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)],queue_number);
 		}
 		else{
 			msg.channel.send("This is the first song");
@@ -511,7 +512,6 @@ async function Voice(msg,command){
 		var number = msg.content.split(' ')[1];
 
 		if(number == undefined){
-			var url_current, index;
 			//console.log(queue_global)
 			const FieldsEmbed = new Pagination.FieldsEmbed()
 			FieldsEmbed.embed.setColor("#0099ff");
@@ -519,27 +519,26 @@ async function Voice(msg,command){
 			FieldsEmbed.setChannel(msg.channel);
 			FieldsEmbed.setElementsPerPage(10);
 			FieldsEmbed.setAuthorizedUsers([]);
-			var array = [];
-			array.length = queue_global.length;
-			for(count=0;count<array.length;count++){
-				array[count] = count;
-			}
+			const array = queue_global.map((_,index) => {
+				return index
+			})
 			FieldsEmbed.setArray(array);
 			FieldsEmbed.formatField('Musics', i => "**Song "+ (i+1) +"** -- "+queue_global[i].title);
 			FieldsEmbed.setDisabledNavigationEmojis(['delete','jump']);
 			FieldsEmbed.setTimeout(0);	
 			FieldsEmbed.build();
-			index = queue_number;
-			url_current = queue_global[(queue_number-1)].url;
+
+			const index = queue_number;
+			const video = queue_global[(queue_number-1)];
 		
-			CurrentPlayingEmbed(msg.channel,url_current,index);
+			CurrentPlayingEmbed(msg.channel,video,index);
 		}
 		else{
 			if(number <= queue_tamanho && number>0){
 				queue_number = number;
-				url_current = queue_global[(queue_number-1)].url;
+				const video = queue_global[(queue_number-1)];
 				define_musica(voiceChannel,0);
-				CurrentPlayingEmbed(msg.channel,url_current,queue_number);
+				CurrentPlayingEmbed(msg.channel,video,queue_number);
 			}
 			else{
 				msg.channel.send("Give me a valid number");
@@ -548,63 +547,51 @@ async function Voice(msg,command){
 	}
 	//Add
 	if(command === config.prefix+'add'){
-		var url = msg.content.split(' ')[1];
-		if(ytpl.validateID(url)==false){
-			if(ytdl.validateURL(url)==true){
-			
-				//Adiciona a url no vetor queue
-				//console.log(queue_global.url);
-				const video = await ytdl.getBasicInfo(url);
-				queue_global.push({title: video.videoDetails.title,url:url});
-				msg.channel.send("Added: **"+video.videoDetails.title+"** to the queue");
-				if(queue_global.length==1){
-					queue_number = 1;
-					queue_tamanho = 1;
-					define_musica(voiceChannel,0);
-				}
-				if(last_song == true){
-					queue_number++;
-					define_musica(voiceChannel,0);
-					last_song = false;
-				}
+		const url = msg.content.split(' ')[1];
+		if(!ytpl.validateID(url)){
+			//Video
+			if(ytdl.validateURL(url)){
+				AddMusic(url).then(queue => {
+					queue_global.push(queue);
+					msg.channel.send("Added: **"+queue.title+"** to the queue");
+					if(queue_global.length==1){
+						queue_number = 1;
+						define_musica(voiceChannel,0);
+					}
+					if(last_song == true){
+						queue_number++;
+						define_musica(voiceChannel,0);
+						last_song = false;
+					}
+				}).catch(err => console.log(err))				
 			}
 			else{
-				var url = msg.content.replace(msg.content.split(' ')[0],'');
-				var video = await Search_Video(url);
-				queue_global.push({title:video.title,url:video.link});
-				msg.channel.send("Added: **"+video.title+"** to the queue");
-				if(queue_global.length==1){
-					queue_number = 1;
-					queue_tamanho = 1;
-					define_musica(voiceChannel,0);
-				}
-				if(last_song == true){
-					queue_number++;
-					define_musica(voiceChannel,0);
-					last_song = false;
-				}
+			//Search
+				const search = msg.content.replace(msg.content.split(' ')[0],'');
+				Search_Video(search,1).then(queue => {
+					const video = queue[0];
+					queue_global.push(video);
+					msg.channel.send("Added: **"+video.title+"** to the queue");
+					if(queue_global.length==1){
+						queue_number = 1;
+						define_musica(voiceChannel,0);
+					}
+					if(last_song == true){
+						queue_number++;
+						define_musica(voiceChannel,0);
+						last_song = false;
+					}
+				}).catch(err => console.log(err))
 			}
-			queue_tamanho = queue_global.length;
 		}
 		else{
-			const id = await ytpl.getPlaylistID(url)
-			ytpl(id).then(playlist => {
-				//console.log(playlist);
-
-				var listsize = playlist.items.length;
-				var currentsize = queue_global.length;
-				
-				//console.log(queue_global.title[queue_global.title.length]);
-
-				for(var count = currentsize;count<(listsize+currentsize);count++){
-					//console.log("Titulo["+count+"]: "+playlist.items[(count-1)].title);
-					queue_global.push({title: playlist.items[count-currentsize].title, url: playlist.items[count-currentsize].url_simple})
-				}
-				//console.log(queue_global);
-				msg.channel.send("Added the playlist: **"+playlist.title+"** to the queue");
+			//Playlist
+			AddPlaylist(url).then(({items,title}) => {
+				Array.prototype.push.apply(queue_global,items)
+				const listsize = queue_global.length
+				msg.channel.send("Added the playlist: **"+title+"** to the queue");
 				if(queue_global.length == listsize){
 					queue_number = 1;
-					queue_tamanho = listsize;
 					define_musica(voiceChannel,0);
 				}
 				if(last_song == true){
@@ -612,14 +599,11 @@ async function Voice(msg,command){
 					define_musica(voiceChannel,0);
 					last_song = false;
 				}
-				queue_tamanho = queue_global.length;
-			}).catch(err => {
-				console.log(err);
-			});
+			}).catch(err => console.log(err))
 		}
 		
 	}
-	//Clean
+	//Clear
 	if(command === config.prefix+'clear'){
 		if(queue_tamanho==0){
 			msg.channel.send("There is no queue to clear!");
@@ -669,7 +653,7 @@ async function Voice(msg,command){
 function define_musica(voiceChannel,pause){
 	voice_global = voiceChannel;
 	//console.log("index: "+(queue_number-1));
-	console.log(queue_global[(queue_number-1)])
+	//console.log(queue_global[(queue_number-1)])
 	const musicUrl = queue_global[(queue_number-1)].url;
 	queue_tamanho = queue_global.length;
 
@@ -710,14 +694,12 @@ function Leave(voice){
 		console.log(error);
 	}
 }
-async function CurrentPlayingEmbed(channel,url_current,index){
-
-	const video = await ytdl.getBasicInfo(url_current);
+function CurrentPlayingEmbed(channel,video,index){
 	const CurrentPlayingEmbed = new Discord.MessageEmbed();
 	CurrentPlayingEmbed.setColor("#0099ff");
 	CurrentPlayingEmbed.setTitle("Current Playing Song "+index);
-	CurrentPlayingEmbed.setDescription(video.videoDetails.title);
-	CurrentPlayingEmbed.setImage(video.videoDetails.thumbnail.thumbnails[4].url);
+	CurrentPlayingEmbed.setDescription(video.title);
+	CurrentPlayingEmbed.setImage(video.image);
 	channel.send(CurrentPlayingEmbed);
 }
 
@@ -756,17 +738,22 @@ function MongoSelect(query,collection,projection_received){
 }
 function AddMusic(url){
 	return ytdl.getBasicInfo(url).then(({videoDetails}) => {
-		const {title,video_url,lengthSeconds} = videoDetails
+		const {title,video_url,lengthSeconds,thumbnail} = videoDetails
+		const image = thumbnail.thumbnails[3].url
 
-		return {title:title,url:video_url,seconds:lengthSeconds}
+		return {title:title,url:video_url,seconds:lengthSeconds,image:image}
 	}).catch(err => console.log("--Erro no AddMusic--\n"+err));
 }
 function AddPlaylist(url){
-	return ytpl(url).then(({items}) => {
-		return items.map(({title,url_simple,duration}) => {
-			const seconds = ToSeconds(duration)
-			return {title:title, url:url_simple,seconds:seconds}
-		})
+	return ytpl(url).then(({items,title}) => {
+		return{
+			title: title,
+			items: items.map(({title,url_simple,duration,thumbnail}) => {
+				const seconds = ToSeconds(duration)
+				return {title:title,url:url_simple,seconds:seconds,image:thumbnail}
+			})
+			
+		}
 	}).catch(err => console.log("--Erro no AddPlaylist--\n"+err))
 }
 function Search_Video(name,limit){
@@ -779,7 +766,7 @@ function Search_Video(name,limit){
 		const {items} = await ytsr(null, options);
 		return items.map(value => {
 			const seconds = ToSeconds(value.duration)
-			return {title:value.title,url:value.link,seconds:seconds}
+			return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
 		})
 	}).catch(err => {console.error(err);});
 }
