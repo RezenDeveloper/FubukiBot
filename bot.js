@@ -418,9 +418,10 @@ async function Voice(msg,command){
 			else{
 				const name = msg.content.replace(msg.content.split(' ')[0],'');
 				Search_Video(name,1).then(queue => {
-					queue_global[0] = queue[0]
+					const video = queue[0]
+					queue_global[0] = video
 					define_musica(voiceChannel,0);
-					msg.channel.send("Playing: **"+queue.title+"**");
+					msg.channel.send("Playing: **"+video.title+"**");
 				}).catch(err => console.log(err));
 			}
 			queue_number = 1;
@@ -654,17 +655,17 @@ function define_musica(voiceChannel,pause){
 	voice_global = voiceChannel;
 	//console.log("index: "+(queue_number-1));
 	//console.log(queue_global[(queue_number-1)])
-	const musicUrl = queue_global[(queue_number-1)].url;
+	const music = queue_global[(queue_number-1)];
 	queue_tamanho = queue_global.length;
 
 	voiceChannel.join().then(connection => {
-
-		const stream = ytdl(musicUrl, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
+		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
 		const dispatcher = connection.play(stream);
 		if(pause==1){
 			dispatcher.pause();
 			paused_global = 1;
 		}
+		MusicStatus(music,pause)
 		dispatcher.on('finish',function(){ 
 			//console.log('finished');
 			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
@@ -773,6 +774,11 @@ function Search_Video(name,limit){
 function ToSeconds(time){
 	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
 }
-function MusicStatus(){
-	client.user.setActivity("", { type: 'PLAYING' });
+function MusicStatus(music,pause){
+	if(pause === 0){
+		client.user.setActivity(music.title, { type: 'LISTENING' });
+	}
+	else{
+		client.user.setActivity("");
+	}
 }
