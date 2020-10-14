@@ -13,7 +13,7 @@ var MongoClient = require('mongodb').MongoClient;
 config.mongo_url = process.env.DATABASE_URL;
 config.token = process.env.TOKEN;
 
-let nickname="", reply="", name_status="", search_global="", voice_global="";
+let nickname="", reply="", name_status="", search_global="", voice_global=null;
 let search_waiting=false, last_song = false, offline = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
 let queue_global = [];
@@ -379,7 +379,6 @@ async function Voice(msg,command){
 
 	voiceChannel = voiceChannel === null ? voice_global : voiceChannel;
 	if (voiceChannel === null) {
-		console.log('null')
 		msg.reply('Please join a voice channel first '+nickname+'!');
 		return;
 	}
@@ -675,9 +674,8 @@ function define_musica(voiceChannel,pause){
 	let Dispatchertime = 0;
 	//console.log("index: "+(queue_number-1));
 	const music = queue_global[(queue_number-1)];
-	console.log(queue_global)
+	//console.log(queue_global)
 	
-
 	voiceChannel.join().then(connection => {
 		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
 		const dispatcher = connection.play(stream);
