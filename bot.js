@@ -35,6 +35,7 @@ Adicionar comando /addnext - adiciona a musica na próssima posição
 Tocar recomendados se for a última musica da queue
 /addplaylist - adiciona a playlist selecionada na queue
 /addplaylistbanco - adiciona uma playlist no banco de dados
+/time xx:xx:xx - seleciona o tempo do video
 
 BUGS
 
