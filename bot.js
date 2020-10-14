@@ -213,18 +213,16 @@ async function Comandos(msg){
 	}
 	//playplaylist
 	if (msg.content.split(' ')[0].toLowerCase() == config.prefix+'playplaylist' || msg.content.split(' ')[0].toLowerCase() == config.prefix+'pp') {
-		try{
-			var music = msg.content.split(' ')[1].toLowerCase();
-			var result = await MongoSelect({name: music},"playlists",{_id: 0,url: 1});
+
+		const music = msg.content.split(' ')[1].toLowerCase();
+		MongoSelect({name: music},"playlists",{_id: 0,url: 1}).then(result => {
 			const fakemessage = msg;
 			fakemessage.content = config.prefix+"play "+result[0].url;
 			Voice(fakemessage,config.prefix+"play");
-		}
-		catch(error){
+		}).catch(error => {
 			msg.channel.send("Sorry, i couldn't find this playlist on my database");
 			console.log(error);
-		}
-		
+		})
 	}
 }
 function Fubuki_Adm(msg){
@@ -722,6 +720,19 @@ function GetId(id){
 	//console.log(channel_id);
 	return channel_id;
 }
+function ToSeconds(time){
+	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
+}
+function MusicStatus(music,pause){
+	if(pause === 0){
+		client.user.setActivity(music.title, { type: 'LISTENING' });
+	}
+	else{
+		client.user.setActivity("");
+	}
+}
+
+//Requests
 function MongoSelect(query,collection,projection_received){
 
 	return new Promise(result => {
@@ -770,15 +781,4 @@ function Search_Video(name,limit){
 			return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
 		})
 	}).catch(err => {console.error(err);});
-}
-function ToSeconds(time){
-	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
-}
-function MusicStatus(music,pause){
-	if(pause === 0){
-		client.user.setActivity(music.title, { type: 'LISTENING' });
-	}
-	else{
-		client.user.setActivity("");
-	}
 }
