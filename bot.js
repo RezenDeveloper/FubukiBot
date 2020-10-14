@@ -653,7 +653,7 @@ async function Voice(msg,command){
 		updateMessage = setInterval(() => {
 			const {current,total} = time;
 			editMessage.edit(`${current.toString().toHHMMSS()} of ${total.toString().toHHMMSS()}`)
-		}, 1000);
+		}, 5000);
 	}
 	//Pause
 	if(command === config.prefix+'pause'){
@@ -785,7 +785,7 @@ function MongoSelect(query,collection,projection_received){
 					result(data);
 				});
 			});
-		}, 5000);
+		}, 1000);
 	});
 }
 function AddMusic(url){
