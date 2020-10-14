@@ -16,7 +16,7 @@ config.token = process.env.TOKEN;
 let nickname="", reply="", name_status="", search_global="", voice_global="";
 let search_waiting=false, last_song = false, offline = false;
 let queue_number = 0, queue_tamanho = 0, paused_global=0;
-let queue_global = [];
+let queue_global = [], dispatcherGlobal;
 const botId = config.botId;
 
 /*
@@ -651,20 +651,25 @@ async function Voice(msg,command){
 }
 function define_musica(voiceChannel,pause){
 	voice_global = voiceChannel;
+	queue_tamanho = queue_global.length;
+	let time = 0;
 	//console.log("index: "+(queue_number-1));
 	//console.log(queue_global[(queue_number-1)])
 	const music = queue_global[(queue_number-1)];
-	queue_tamanho = queue_global.length;
+	
 
 	voiceChannel.join().then(connection => {
 		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
 		const dispatcher = connection.play(stream);
+		MusicStatus(music,pause)
 		if(pause==1){
 			dispatcher.pause();
 			paused_global = 1;
 		}
-		MusicStatus(music,pause)
-		dispatcher.on('finish',function(){ 
+		dispatcher.on('speaking', () => {
+			time = dispatcher.streamTime;
+		})
+		dispatcher.on('finish',function(){
 			//console.log('finished');
 			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
 			if(queue_number < queue_global.length){
@@ -680,6 +685,9 @@ function define_musica(voiceChannel,pause){
 			console.log(error);
 		});
 	});
+	const interval = setInterval(() => {
+		dispatcherTime(music,time)
+	}, 1000);
 }
 function Leave(voice){
 	try{
@@ -723,15 +731,19 @@ function GetId(id){
 function ToSeconds(time){
 	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
 }
-function MusicStatus(music,pause){
+function MusicStatus(music,pause,time){
 	if(pause === 0){
-		client.user.setActivity(music.title, { type: 'LISTENING' });
+		client.user.setActivity(`${music.title}\n${minutes}:${seconds}`, { type: 'LISTENING' });
 	}
 	else{
 		client.user.setActivity("");
 	}
 }
-
+function dispatcherTime(music,time){
+	const seconds = Math.floor(time/1000)
+	const minutes = Math.floor(seconds/60)
+	console.log(`${minutes}:${seconds}`)
+}
 //Requests
 function MongoSelect(query,collection,projection_received){
 
@@ -780,5 +792,5 @@ function Search_Video(name,limit){
 			const seconds = ToSeconds(value.duration)
 			return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
 		})
-	}).catch(err => {console.error(err);});
+	}).catch(err => {console.error("--Erro no Search--\n"+err);});
 }
