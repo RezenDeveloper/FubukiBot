@@ -19,7 +19,7 @@ let queue_number = 0, queue_tamanho = 0, paused_global=0;
 let queue_global = [];
 let time = {current:0,total:0};
 const botId = config.botId;
-let updateMessage;
+let testChannel;
 
 /*
 
@@ -53,6 +53,11 @@ client.login(config.token);
 
 client.once('ready', () => {
 	console.log('Ready! ');
+	client.channels.fetch(config.testChannelId)
+		.then(channel => {
+			testChannel = channel;
+		})
+		.catch(console.error);
 	if(process.env.OFFLINE == "true"){
 		config.prefix = "/";
 		console.log("Running local");
@@ -639,22 +644,6 @@ async function Voice(msg,command){
 		define_musica(voiceChannel,0);
 		msg.channel.send("Shuffled!");
 	}
-	//Time
-	if(command === config.prefix+'time'){
-		if(queue_global.length === 0){
-			msg.channel.send("There's no time to show");
-			return;
-		}
-		let {current,total} = time
-		const editMessage = await msg.channel.send(`${current.toString().toHHMMSS()} of ${total.toString().toHHMMSS()}`);
-		if(updateMessage !== undefined){
-			clearTimeout(updateMessage);
-		}
-		updateMessage = setInterval(() => {
-			const {current,total} = time;
-			editMessage.edit(`${current.toString().toHHMMSS()} of ${total.toString().toHHMMSS()}`)
-		}, 5000);
-	}
 	//Pause
 	if(command === config.prefix+'pause'){
 		if(paused_global != 1){
@@ -683,7 +672,6 @@ function define_musica(voiceChannel,pause){
 		if(pause==1){
 			dispatcher.pause();
 			paused_global = 1;
-			clearTimeout(updateMessage);
 		}
 		dispatcher.on('speaking', () => {
 			Dispatchertime = dispatcher.streamTime;
@@ -699,15 +687,11 @@ function define_musica(voiceChannel,pause){
 				last_song = true;
 			}
 		});
-		dispatcher.on('error',function(error){ 
-			console.log('---DISPATCHER ERROR---');
-			console.log(error);
+		dispatcher.on('error',function(err){ 
+			console.log('---DISPATCHER ERROR---\n'+err);
+			testChannel.send('---DISPATCHER ERROR---\n'+err)
 		});
 	});
-	const interval = setInterval(() => {
-		const current = Math.floor(Dispatchertime/1000)
-		time = {current:current,total:music.seconds}
-	}, 1000);
 }
 function Leave(voice){
 	try{
@@ -794,7 +778,10 @@ function AddMusic(url){
 		const image = thumbnail.thumbnails[3].url
 
 		return {title:title,url:video_url,seconds:lengthSeconds,image:image}
-	}).catch(err => console.log("--Erro no AddMusic--\n"+err));
+	}).catch(err => {
+		console.log("--Erro no AddMusic--\n"+err)
+		testChannel.send("--Erro no AddMusic--\n"+err)
+	});
 }
 function AddPlaylist(url){
 	return ytpl(url).then(({items,title}) => {
@@ -804,9 +791,11 @@ function AddPlaylist(url){
 				const seconds = ToSeconds(duration)
 				return {title:title,url:url_simple,seconds:seconds,image:thumbnail}
 			})
-			
 		}
-	}).catch(err => console.log("--Erro no AddPlaylist--\n"+err))
+	}).catch(err => {
+		console.log("--Erro no AddPlaylist--\n"+err)
+		testChannel.send("--Erro no AddPlaylist--\n"+err)
+	})
 }
 function Search_Video(name,limit){
 	return ytsr.getFilters(name).then(async (filters1) => {
@@ -820,5 +809,8 @@ function Search_Video(name,limit){
 			const seconds = ToSeconds(value.duration)
 			return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
 		})
-	}).catch(err => {console.error("--Erro no Search--\n"+err);});
+	}).catch(err => {
+		console.error("--Erro no Search--\n"+err);
+		testChannel.send("--Erro no Search--\n"+err)
+	});
 }
