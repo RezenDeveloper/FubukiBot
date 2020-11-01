@@ -149,7 +149,6 @@ async function Comandos(msg){
 	if (msg.content.toLowerCase() == config.prefix+'oyasumi') {
 	
 		msg.channel.send('> Oyasuminasai '+nickname+' :zzz:');
-
 	}
 	//RandomFubuki
 	if (msg.content.toLowerCase() == config.prefix+'randomfubuki' || msg.content.toLowerCase() == config.prefix+'rf') {
@@ -337,13 +336,26 @@ function Fubuki_Adm(msg){
 					msg.channel.send("I could not find this message ID");
 				}
 			}
-			catch(error2){
+			catch(err){
 				msg.channel.send("Sorry, i could not find this channel ID ");
-				console.log(error2);
+				console.log(err);
 			}
 		}
 		else{
 			msg.reply("You don't have the authority for this, baka!");
+		}
+	}
+	//Offline
+	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'setoffline'){
+		if(msg.author.id=="373885546113662977"){
+			if(offline){
+				msg.channel.send("Back to online!");
+				offline = true;
+			}
+			else{
+				msg.channel.send("Now running offline!");
+				offline = false;
+			}
 		}
 	}
 }
@@ -667,17 +679,18 @@ function define_musica(voiceChannel,pause){
 	
 	voiceChannel.join().then(connection => {
 		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
-		const dispatcher = connection.play(stream);
 		MusicStatus(music,pause)
-		if(pause==1){
-			dispatcher.pause();
-			paused_global = 1;
-		}
-		dispatcher.on('speaking', () => {
+		const dispatcher = connection.play(stream)
+		.on('speaking', () => {
+			if(pause==1){
+				dispatcher.pause();
+				paused_global = 1;
+			}
 			Dispatchertime = dispatcher.streamTime;
+			console.log(Dispatchertime)
 		})
-		dispatcher.on('finish',function(){
-			//console.log('finished');
+		.on('finish',() => {
+			console.log('finished');
 			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
 			if(queue_number < queue_global.length){
 				queue_number = queue_number+1;
@@ -686,11 +699,14 @@ function define_musica(voiceChannel,pause){
 			else{
 				last_song = true;
 			}
-		});
-		dispatcher.on('error',function(err){ 
+		})
+		.on('error',(err) => { 
 			console.log('---DISPATCHER ERROR---\n'+err);
 			testChannel.send('---DISPATCHER ERROR---\n'+err)
-		});
+		})
+	}).catch((er) => {
+		console.log(er)
+		testChannel.send('---CONNECTION ERROR---\n'+err)
 	});
 }
 function Leave(voice){
@@ -798,17 +814,18 @@ function AddPlaylist(url){
 	})
 }
 function Search_Video(name,limit){
-	return ytsr.getFilters(name).then(async (filters1) => {
+	return ytsr.getFilters(name).then((filters1) => {
 		const filter1 = filters1.get('Type').find(o => o.name === 'Video');
 		const options = {
 			limit: limit,
 			nextpageRef: filter1.ref,
 		}
-		const {items} = await ytsr(null, options);
-		return items.map(value => {
-			const seconds = ToSeconds(value.duration)
-			return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
-		})
+		return ytsr(null, options).then(({items}) => {
+			return items.map(value => {
+				const seconds = ToSeconds(value.duration)
+				return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
+			})
+		});
 	}).catch(err => {
 		console.error("--Erro no Search--\n"+err);
 		testChannel.send("--Erro no Search--\n"+err)
