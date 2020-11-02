@@ -98,7 +98,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 	})
 	//console.log(voiceUsers);
 	//console.log(voiceUsers.length);
-	if(voiceUsers.length === 1 && voiceUsers[0] === botId && !offline){
+	if(voiceUsers.length === 1 && voiceUsers[0] === botId && offline === false){
 		Leave(voice_global);
 	}
 });
@@ -343,19 +343,6 @@ function Fubuki_Adm(msg){
 		}
 		else{
 			msg.reply("You don't have the authority for this, baka!");
-		}
-	}
-	//Offline
-	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'setoffline'){
-		if(msg.author.id=="373885546113662977"){
-			if(!offline){
-				msg.channel.send("Back to online!");
-				offline = false;
-			}
-			else{
-				msg.channel.send("Now running offline!");
-				offline = true;
-			}
 		}
 	}
 }
