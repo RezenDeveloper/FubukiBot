@@ -348,13 +348,13 @@ function Fubuki_Adm(msg){
 	//Offline
 	if(msg.content.toLowerCase().split(' ')[0] == config.prefix+'setoffline'){
 		if(msg.author.id=="373885546113662977"){
-			if(offline){
+			if(!offline){
 				msg.channel.send("Back to online!");
-				offline = true;
+				offline = false;
 			}
 			else{
 				msg.channel.send("Now running offline!");
-				offline = false;
+				offline = true;
 			}
 		}
 	}
