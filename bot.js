@@ -2,12 +2,10 @@ const Discord = require('discord.js');
 const config = require('./config.json');
 
 const client = new Discord.Client();
-const { OpusEncoder } = require('@discordjs/opus');
 const ytdl = require('ytdl-core');
 const ytpl = require('ytpl');
 const ytsr = require('ytsr');
 const Pagination = require('discord-paginationembed');
-const fs = require('fs');
 
 var MongoClient = require('mongodb').MongoClient;
 
@@ -34,12 +32,9 @@ Adicionar comando /addnext - adiciona a musica na próssima posição
 Tocar recomendados se for a última musica da queue
 /addplaylist - adiciona a playlist selecionada na queue
 /addplaylistbanco - adiciona uma playlist no banco de dados
-/time xx:xx:xx - seleciona o tempo do video
 
 BUGS
-
-
-CONCLUIDOS
+---
 
 -------------------------------------------------------------------
 */
@@ -125,6 +120,7 @@ async function Comandos(msg){
 											"**"+config.prefix+"d100** - Roll the D100", inline: true },
 			{ name: 'Voice Commands', value: "**"+config.prefix+"play (url/name)** - I will sing it for you! \n"+
 											 "**"+config.prefix+"pause** - Toki wo Tomare!\n"+
+											 "**"+config.prefix+"time(HH:MM:SS)** - Select the time of the song\n"+
 											 "**"+config.prefix+"PlayPlaylist (name)** - Play a playlist from my database\n"+
 											 "**"+config.prefix+"leave** - I will leave the voice \n"+
 											 "**"+config.prefix+"next** - Next song of the playlist/queue \n"+
@@ -661,19 +657,44 @@ async function Voice(msg,command){
 			msg.channel.send('Nothing to pause')
 		}
 	}
+	//Time
+	if(command === config.prefix+'time'){
+		const time = msg.content.split(' ')[1];
+		const template = new RegExp(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
+		if(template.test(time)){
+			const hasMinutes = time.split(':').length === 2
+			const hasHours = time.split(':').length === 3
+			const seconds = hasHours? time.split(':')[2] : hasMinutes? time.split(':')[1] : time
+			const minutes = hasHours? time.split(':')[1] : hasMinutes? time.split(':')[0] : 0
+			const hours = hasHours? time.split(':')[0] : 0
+
+			const total = parseFloat(seconds) + parseFloat(minutes)*60 + parseFloat(hours)*60*60
+			define_musica(voiceChannel,total)
+			msg.channel.send("Done!");
+		}
+		else{
+			msg.channel.send("Please send a valid time (HH:MM:SS)");
+		}
+	}
 }
-function define_musica(voiceChannel){
+function define_musica(voiceChannel,time){
 	voice_global = voiceChannel;
 	queue_tamanho = queue_global.length;
-	let time = 0, filter = "audioonly";
+	let filter = "audioonly";
 	//console.log("index: "+(queue_number-1));
 	const music = queue_global[(queue_number-1)];
 
 	if(music.url.split('t=')[1]){
 		time = new URL(music.url).searchParams.get('t');
 		filter = "audio"
-		console.log('baixando video a partir de '+time+'s')
 	}
+	else if(time !== undefined){
+		filter = "audio"
+	}
+	else{
+		time = 0
+	}
+	console.log('baixando video a partir de '+time+'s')
 	//console.log(queue_global)
 	
 	voiceChannel.join().then(connection => {
