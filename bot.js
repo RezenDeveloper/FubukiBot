@@ -7,6 +7,7 @@ const ytdl = require('ytdl-core');
 const ytpl = require('ytpl');
 const ytsr = require('ytsr');
 const Pagination = require('discord-paginationembed');
+const fs = require('fs');
 
 var MongoClient = require('mongodb').MongoClient;
 
@@ -664,13 +665,20 @@ async function Voice(msg,command){
 function define_musica(voiceChannel){
 	voice_global = voiceChannel;
 	queue_tamanho = queue_global.length;
+	let time = 0, filter = "audioonly";
 	//console.log("index: "+(queue_number-1));
 	const music = queue_global[(queue_number-1)];
+
+	if(music.url.split('t=')[1]){
+		time = new URL(music.url).searchParams.get('t');
+		filter = "audio"
+		console.log('baixando video a partir de '+time+'s')
+	}
 	//console.log(queue_global)
 	
 	voiceChannel.join().then(connection => {
-		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
-		
+		const stream = ytdl(music.url, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
+
 		dispatcher = connection.play(stream)
 
 		dispatcher.on('start',() => {
@@ -773,10 +781,10 @@ function MongoSelect(query,collection,projection_received){
 }
 function AddMusic(url){
 	return ytdl.getBasicInfo(url).then(({videoDetails}) => {
-		const {title,video_url,lengthSeconds,thumbnail} = videoDetails
+		const {title,lengthSeconds,thumbnail} = videoDetails
 		const image = thumbnail.thumbnails[3].url
 
-		return {title:title,url:video_url,seconds:lengthSeconds,image:image}
+		return {title:title,url:url,seconds:lengthSeconds,image:image}
 	}).catch(err => {
 		console.log("--Erro no AddMusic--\n"+err)
 		testChannel.send("--Erro no AddMusic--\n"+err)
