@@ -681,16 +681,11 @@ function define_musica(voiceChannel,pause){
 		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
 		MusicStatus(music,pause)
 		const dispatcher = connection.play(stream)
-		.on('speaking', () => {
-			if(pause==1){
-				dispatcher.pause();
-				paused_global = 1;
-			}
-			Dispatchertime = dispatcher.streamTime;
-			console.log(Dispatchertime)
-		})
-		.on('finish',() => {
-			console.log('finished');
+		if(pause==1){
+			dispatcher.pause();
+			paused_global = 1;
+		}
+		dispatcher.on('finish',() => {
 			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
 			if(queue_number < queue_global.length){
 				queue_number = queue_number+1;
@@ -700,7 +695,7 @@ function define_musica(voiceChannel,pause){
 				last_song = true;
 			}
 		})
-		.on('error',(err) => { 
+		dispatcher.on('error',(err) => { 
 			console.log('---DISPATCHER ERROR---\n'+err);
 			testChannel.send('---DISPATCHER ERROR---\n'+err)
 		})
@@ -718,6 +713,7 @@ function Leave(voice){
 	}
 	catch(error){
 		console.log("------ ERRO NO LEAVE ------")
+		testChannel.send("------ ERRO NO LEAVE ------")
 		console.log(error);
 	}
 }
