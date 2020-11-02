@@ -694,7 +694,7 @@ function define_musica(voiceChannel,time){
 	else{
 		time = 0
 	}
-	console.log('baixando video a partir de '+time+'s')
+	//console.log('baixando video a partir de '+time+'s')
 	//console.log(queue_global)
 	
 	voiceChannel.join().then(connection => {
