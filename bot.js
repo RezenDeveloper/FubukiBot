@@ -17,7 +17,6 @@ let nickname="", reply="", name_status="", search_global="", voice_global=null;
 let search_waiting=false, last_song = false, offline = false, paused_global=false;
 let queue_number = 0, queue_tamanho = 0;
 let queue_global = [];
-let time = {current:0,total:0};
 const botId = config.botId;
 let testChannel;
 let dispatcher = undefined;
@@ -29,7 +28,6 @@ Guias: https://discordjs.guide/ e https://anidiots.guide/
 
 ATUALIZAÇÕES
 
-aumentar o tempo do status
 Adicionar comando /addfirst - adiciona a musica na primeira posição
 Adicionar comando /addnext - adiciona a musica na próssima posição
 Tocar recomendados se for a última musica da queue
@@ -99,7 +97,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 	//console.log(voiceUsers);
 	//console.log(voiceUsers.length);
 	if(voiceUsers.length === 1 && voiceUsers[0] === botId && offline === false){
-		Leave(voice_global);
+		Leave();
 	}
 });
 
@@ -407,7 +405,7 @@ async function Voice(msg,command){
 			AddPlaylist(url).then(playlist => {
 				queue_global = playlist.items
 				msg.channel.send("Playing the playlist **"+playlist.title+"**");
-				define_musica(voiceChannel,0);
+				define_musica(voiceChannel);
 			}).catch(err => console.log(err));
 			
 		}
@@ -416,7 +414,7 @@ async function Voice(msg,command){
 			if(ytdl.validateURL(url)==true){
 				AddMusic(url).then(queue => {
 					queue_global[0] = queue
-					define_musica(voiceChannel,0);
+					define_musica(voiceChannel);
 				}).catch(err => console.log(err))
 			}
 			else{
@@ -424,7 +422,7 @@ async function Voice(msg,command){
 				Search_Video(name,1).then(queue => {
 					const video = queue[0]
 					queue_global[0] = video
-					define_musica(voiceChannel,0);
+					define_musica(voiceChannel);
 					msg.channel.send("Playing: **"+video.title+"**");
 				}).catch(err => console.log(err));
 			}
@@ -472,20 +470,20 @@ async function Voice(msg,command){
 		const searchSeconds = search_global[number].seconds;
 		queue_global[0] = {title:searchTitle,url:searchUrl,seconds:searchSeconds}
 		queue_number = 1;
-		define_musica(voiceChannel,0);
+		define_musica(voiceChannel);
 		msg.channel.send("Playing the song: "+search_global[number].title);
 		search_waiting = false;
 	}
 	//Leave
 	if(msg.content.toLowerCase() === config.prefix+'leave'){
-		Leave(voiceChannel);
+		Leave();
 	}
 	//Next
 	if(msg.content.toLowerCase() === config.prefix+'next'){
 		queue_tamanho = queue_global.length
 		if(queue_number < queue_tamanho){
 			queue_number++;
-			define_musica(voiceChannel,0);
+			define_musica(voiceChannel);
 			msg.channel.send("Next song!");
 			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)],queue_number);
 		}
@@ -499,7 +497,7 @@ async function Voice(msg,command){
 		queue_tamanho = queue_global.length
 		if(queue_number > 1){
 			queue_number--;
-			define_musica(voiceChannel,0);
+			define_musica(voiceChannel);
 			msg.channel.send("Previous song!");
 			CurrentPlayingEmbed(msg.channel,queue_global[(queue_number-1)],queue_number);
 		}
@@ -543,7 +541,7 @@ async function Voice(msg,command){
 			if(number <= queue_tamanho && number>0){
 				queue_number = number;
 				const video = queue_global[(queue_number-1)];
-				define_musica(voiceChannel,0);
+				define_musica(voiceChannel);
 				CurrentPlayingEmbed(msg.channel,video,queue_number);
 			}
 			else{
@@ -562,11 +560,11 @@ async function Voice(msg,command){
 					msg.channel.send("Added: **"+queue.title+"** to the queue");
 					if(queue_global.length==1){
 						queue_number = 1;
-						define_musica(voiceChannel,0);
+						define_musica(voiceChannel);
 					}
 					if(last_song == true){
 						queue_number++;
-						define_musica(voiceChannel,0);
+						define_musica(voiceChannel);
 						last_song = false;
 					}
 				}).catch(err => console.log(err))				
@@ -580,11 +578,11 @@ async function Voice(msg,command){
 					msg.channel.send("Added: **"+video.title+"** to the queue");
 					if(queue_global.length==1){
 						queue_number = 1;
-						define_musica(voiceChannel,0);
+						define_musica(voiceChannel);
 					}
 					if(last_song == true){
 						queue_number++;
-						define_musica(voiceChannel,0);
+						define_musica(voiceChannel);
 						last_song = false;
 					}
 				}).catch(err => console.log(err))
@@ -598,11 +596,11 @@ async function Voice(msg,command){
 				msg.channel.send("Added the playlist: **"+title+"** to the queue");
 				if(queue_global.length == listsize){
 					queue_number = 1;
-					define_musica(voiceChannel,0);
+					define_musica(voiceChannel);
 				}
 				if(last_song == true){
 					queue_number++;
-					define_musica(voiceChannel,0);
+					define_musica(voiceChannel);
 					last_song = false;
 				}
 			}).catch(err => console.log(err))
@@ -641,7 +639,7 @@ async function Voice(msg,command){
 				return a.value
 			})
 		queue_global = randomQueue;
-		define_musica(voiceChannel,0);
+		define_musica(voiceChannel);
 		msg.channel.send("Shuffled!");
 	}
 	//Pause
@@ -663,7 +661,7 @@ async function Voice(msg,command){
 		}
 	}
 }
-function define_musica(voiceChannel,pause){
+function define_musica(voiceChannel){
 	voice_global = voiceChannel;
 	queue_tamanho = queue_global.length;
 	let Dispatchertime = 0;
@@ -677,13 +675,13 @@ function define_musica(voiceChannel,pause){
 		dispatcher = connection.play(stream)
 
 		dispatcher.on('start',() => {
-			MusicStatus(music,pause)
+			MusicStatus(music)
 		})
 		dispatcher.on('finish',() => {
 			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
 			if(queue_number < queue_global.length){
 				queue_number = queue_number+1;
-				define_musica(voiceChannel,0);
+				define_musica(voiceChannel);
 			}
 			else{
 				last_song = true;
@@ -698,10 +696,11 @@ function define_musica(voiceChannel,pause){
 		testChannel.send('---CONNECTION ERROR---\n'+err)
 	});
 }
-function Leave(voice){
+function Leave(){
 	try{
-		if(queue_global.length > 0){
-			define_musica(voice,1);
+		if(dispatcher !== undefined){
+			dispatcher.destroy();
+			dispatcher = undefined;
 		}
 		voice_global.leave();
 	}
@@ -741,25 +740,13 @@ function GetId(id){
 function ToSeconds(time){
 	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
 }
-function MusicStatus(music,pause,time){
-	if(pause === 0){
+function MusicStatus(music){
+	if(!paused_global){
 		client.user.setActivity(`${music.title}`, { type: 'LISTENING' });
 	}
 	else{
 		client.user.setActivity("");
 	}
-}
-
-String.prototype.toHHMMSS = function () {
-    var sec_num = parseInt(this, 10);
-    var hours   = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-    var seconds = sec_num - (hours * 3600) - (minutes * 60);
-
-    if (hours   < 10) {hours   = "0"+hours;}
-    if (minutes < 10) {minutes = "0"+minutes;}
-    if (seconds < 10) {seconds = "0"+seconds;}
-    return hours+':'+minutes+':'+seconds;
 }
 
 //Requests
