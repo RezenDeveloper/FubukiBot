@@ -14,7 +14,7 @@ config.mongo_url = process.env.DATABASE_URL;
 config.token = process.env.TOKEN;
 
 let nickname="", reply="", name_status="", search_global="", voice_global=null;
-let search_waiting=false, last_song = false, offline = false, paused_global=false;
+let search_waiting=false, last_song = false, offline = false, paused_global=false, dispatcherEnd = false;
 let queue_number = 0, queue_tamanho = 0;
 let queue_global = [];
 const botId = config.botId;
@@ -614,8 +614,8 @@ async function Voice(msg,command){
 			return;
 		}
 		if(dispatcher !== undefined){
-			dispatcher.destroy()
-			dispatcher = undefined;
+			dispatcherEnd = true
+			dispatcher.end()
 		}
 		queue_number = 0;
 		queue_tamanho = 0;
@@ -664,7 +664,6 @@ async function Voice(msg,command){
 function define_musica(voiceChannel){
 	voice_global = voiceChannel;
 	queue_tamanho = queue_global.length;
-	let Dispatchertime = 0;
 	//console.log("index: "+(queue_number-1));
 	const music = queue_global[(queue_number-1)];
 	//console.log(queue_global)
@@ -678,13 +677,20 @@ function define_musica(voiceChannel){
 			MusicStatus(music)
 		})
 		dispatcher.on('finish',() => {
-			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
-			if(queue_number < queue_global.length){
-				queue_number = queue_number+1;
-				define_musica(voiceChannel);
+			if(dispatcherEnd){
+				dispatcher = undefined
+				dispatcherEnd = false
+				client.user.setActivity("");
 			}
 			else{
-				last_song = true;
+				//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
+				if(queue_number < queue_global.length){
+					queue_number = queue_number+1;
+					define_musica(voiceChannel);
+				}
+				else{
+					last_song = true;
+				}
 			}
 		})
 		dispatcher.on('error',(err) => { 
@@ -699,8 +705,8 @@ function define_musica(voiceChannel){
 function Leave(){
 	try{
 		if(dispatcher !== undefined){
-			dispatcher.destroy();
-			dispatcher = undefined;
+			dispatcherEnd = true
+			dispatcher.end()
 		}
 		voice_global.leave();
 	}
