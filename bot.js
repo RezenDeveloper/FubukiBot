@@ -14,13 +14,13 @@ config.mongo_url = process.env.DATABASE_URL;
 config.token = process.env.TOKEN;
 
 let nickname="", reply="", name_status="", search_global="", voice_global=null;
-let search_waiting=false, last_song = false, offline = false;
-let queue_number = 0, queue_tamanho = 0, paused_global=0;
+let search_waiting=false, last_song = false, offline = false, paused_global=false;
+let queue_number = 0, queue_tamanho = 0;
 let queue_global = [];
 let time = {current:0,total:0};
 const botId = config.botId;
 let testChannel;
-
+let dispatcher = undefined;
 /*
 
 -----------------------------------------------------------------
@@ -628,8 +628,9 @@ async function Voice(msg,command){
 			msg.channel.send("There is no queue to clear!");
 			return;
 		}
-		if(paused_global == 0){
-			define_musica(voiceChannel,1);
+		if(dispatcher !== undefined){
+			dispatcher.destroy()
+			dispatcher = undefined;
 		}
 		queue_number = 0;
 		queue_tamanho = 0;
@@ -658,14 +659,20 @@ async function Voice(msg,command){
 	}
 	//Pause
 	if(command === config.prefix+'pause'){
-		if(paused_global != 1){
-			define_musica(voiceChannel,1);
-			msg.channel.send("<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>");
+		if(dispatcher !== undefined){
+			if(!paused_global){
+				msg.channel.send("<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>");
+				paused_global = true
+				dispatcher.pause();
+			}
+			else{
+				msg.channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>");
+				paused_global = false;
+				dispatcher.resume()
+			}
 		}
 		else{
-			define_musica(voiceChannel,0);
-			msg.channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>");
-			paused_global = 0;
+			msg.channel.send('Nothing to pause')
 		}
 	}
 }
@@ -679,12 +686,12 @@ function define_musica(voiceChannel,pause){
 	
 	voiceChannel.join().then(connection => {
 		const stream = ytdl(music.url, { filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1 << 25});
-		MusicStatus(music,pause)
-		const dispatcher = connection.play(stream)
-		if(pause==1){
-			dispatcher.pause();
-			paused_global = 1;
-		}
+		
+		dispatcher = connection.play(stream)
+
+		dispatcher.on('start',() => {
+			MusicStatus(music,pause)
+		})
 		dispatcher.on('finish',() => {
 			//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
 			if(queue_number < queue_global.length){
