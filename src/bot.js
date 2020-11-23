@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const config = require('./config.json');
+const config = require('../config.json');
 
 const client = new Discord.Client();
 const ytdl = require('ytdl-core');
@@ -7,7 +7,7 @@ const ytpl = require('ytpl');
 const ytsr = require('ytsr');
 const Pagination = require('discord-paginationembed');
 
-var MongoClient = require('mongodb').MongoClient;
+const MongoClient = require('mongodb').MongoClient;
 
 config.mongo_url = process.env.DATABASE_URL;
 config.token = process.env.TOKEN;
@@ -19,6 +19,7 @@ let queue_global = [];
 const botId = config.botId;
 let testChannel;
 let dispatcher = undefined;
+
 /*
 
 -----------------------------------------------------------------
@@ -367,7 +368,7 @@ function CheckName(author,tag){
 }
 
 //Voice
-async function Voice(msg,command){
+function Voice(msg,command){
 	if(msg.channel.type == 'dm'){
 		//Verifica se a mensagem é uma DM
 		return;
@@ -390,24 +391,11 @@ async function Voice(msg,command){
 		const url = msg.content.split(' ')[1];
 		//console.log("mensagem: "+message.content+"\ncomando: "+message.content.toLowerCase().split(' ')[0]+"\nurl: "+url);
 
-		//Playlist
-		if(ytpl.validateID(url)==true){
-			if(url.split('index=')[1]){
-				var index = new URL(url).searchParams.get('index');
-				queue_number = index;
-			}
-			else{
-				queue_number = 1;
-			}	
-			AddPlaylist(url).then(playlist => {
-				queue_global = playlist.items
-				msg.channel.send("Playing the playlist **"+playlist.title+"**");
-				define_musica(voiceChannel);
-			}).catch(err => console.log(err));
-			
-		}
 		//Video
-		else{
+		const playlistId = getPlaylistId(url)
+		queue_number = 1;
+
+		if(playlistId === undefined){
 			if(ytdl.validateURL(url)==true){
 				AddMusic(url).then(queue => {
 					queue_global[0] = queue
@@ -423,7 +411,18 @@ async function Voice(msg,command){
 					msg.channel.send("Playing: **"+video.title+"**");
 				}).catch(err => console.log(err));
 			}
-			queue_number = 1;
+		}
+		//Playlist
+		else{
+			if(url.split('index=')[1]){
+				const index = new URL(url).searchParams.get('index');
+				queue_number = index;
+			}
+			AddPlaylist(playlistId).then(playlist => {
+				queue_global = playlist.items
+				msg.channel.send("Playing the playlist **"+playlist.title+"**");
+				define_musica(voiceChannel);
+			}).catch(err => console.log(err));
 		}
 	}
 	//Search
@@ -549,7 +548,9 @@ async function Voice(msg,command){
 	//Add
 	if(command === config.prefix+'add'){
 		const url = msg.content.split(' ')[1];
-		if(!ytpl.validateID(url)){
+		const playlistId = getPlaylistId(url)
+		
+		if(playlistId === undefined){
 			//Video
 			if(ytdl.validateURL(url)){
 				AddMusic(url).then(queue => {
@@ -587,7 +588,7 @@ async function Voice(msg,command){
 		}
 		else{
 			//Playlist
-			AddPlaylist(url).then(({items,title}) => {
+			AddPlaylist(playlistId).then(({items,title}) => {
 				Array.prototype.push.apply(queue_global,items)
 				const listsize = queue_global.length
 				msg.channel.send("Added the playlist: **"+title+"** to the queue");
@@ -696,9 +697,10 @@ function define_musica(voiceChannel,time){
 	}
 	//console.log('baixando video a partir de '+time+'s')
 	//console.log(queue_global)
-	
+	//para lives: filter: audio
+
 	voiceChannel.join().then(connection => {
-		const stream = ytdl(music.url, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
+		const stream = ytdl(music.url, { begin: `${time}s`, filter: 'audio', quality: 'highestaudio', highWaterMark: 1 << 25});
 
 		dispatcher = connection.play(stream)
 
@@ -783,6 +785,10 @@ function MusicStatus(music){
 		client.user.setActivity("");
 	}
 }
+function getPlaylistId(url){
+	const id = new URL(url).searchParams.get('list')
+	return id
+}
 
 //Requests
 function MongoSelect(query,collection,projection_received){
@@ -811,19 +817,18 @@ function AddMusic(url){
 		testChannel.send("--Erro no AddMusic--\n"+err)
 	});
 }
-function AddPlaylist(url){
-	return ytpl(url).then(({items,title}) => {
-		return{
-			title: title,
-			items: items.map(({title,url_simple,duration,thumbnail}) => {
-				const seconds = ToSeconds(duration)
-				return {title:title,url:url_simple,seconds:seconds,image:thumbnail}
-			})
-		}
-	}).catch(err => {
-		console.log("--Erro no AddPlaylist--\n"+err)
+function AddPlaylist(id){
+	const {getPlaylist} = require('./ytSearch')
+
+	getPlaylist(id).then(playlist => {
+		console.log(playlist)
+		console.log('total '+playlist.length)
+	})
+	.catch(err => {
+		console.error("--Erro no AddPlaylist--\n"+err);
 		testChannel.send("--Erro no AddPlaylist--\n"+err)
 	})
+	
 }
 function Search_Video(name,limit){
 	return ytsr.getFilters(name).then((filters1) => {
