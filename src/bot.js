@@ -6,6 +6,8 @@ const ytdl = require('ytdl-core');
 const ytpl = require('ytpl');
 const ytsr = require('ytsr');
 const Pagination = require('discord-paginationembed');
+const { SearchVideo, getPlaylist, getVideoInfo } = require('./ytSearch')
+const { SendError,SetTestChannel } = require('./utils')
 
 const MongoClient = require('mongodb').MongoClient;
 
@@ -48,11 +50,8 @@ client.login(config.token);
 
 client.once('ready', () => {
 	console.log('Ready! ');
-	client.channels.fetch(config.testChannelId)
-		.then(channel => {
-			testChannel = channel;
-		})
-		.catch(console.error);
+	SetTestChannel()
+
 	if(process.env.OFFLINE == "true"){
 		config.prefix = "/";
 		console.log("Running local");
@@ -395,41 +394,41 @@ function Voice(msg,command){
 		const playlistId = getPlaylistId(url)
 		queue_number = 1;
 
-		if(playlistId === undefined){
-			if(ytdl.validateURL(url)==true){
-				AddMusic(url).then(queue => {
-					queue_global[0] = queue
+		if(!playlistId){
+			if(ytdl.validateURL(url)){
+				const id = ytdl.getVideoID(url)
+				getVideoInfo(id).then(result => {
+					result.url = url
+					queue_global[0] = result
 					define_musica(voiceChannel);
-				}).catch(err => console.log(err))
+				}).catch(err => SendError("getVideoInfo",err))
 			}
 			else{
 				const name = msg.content.replace(msg.content.split(' ')[0],'');
-				Search_Video(name,1).then(queue => {
-					const video = queue[0]
-					queue_global[0] = video
+				SearchVideo(name,1).then(({result}) => {
+					queue_global = result
 					define_musica(voiceChannel);
-					msg.channel.send("Playing: **"+video.title+"**");
-				}).catch(err => console.log(err));
+					msg.channel.send("Playing: **"+result[0].title+"**");
+				}).catch(err => SendError("SearchVideo",err));
 			}
 		}
 		//Playlist
 		else{
-			if(url.split('index=')[1]){
-				const index = new URL(url).searchParams.get('index');
-				queue_number = index;
-			}
-			AddPlaylist(playlistId).then(playlist => {
+			const index = new URL(url).searchParams.get('index');
+			queue_number = index ? index : queue_number
+
+			getPlaylist(playlistId).then(playlist => {
 				queue_global = playlist.items
-				msg.channel.send("Playing the playlist **"+playlist.title+"**");
+				msg.channel.send(`Playing the playlist **${playlist.title}**\n From ${playlist.author}`);
 				define_musica(voiceChannel);
-			}).catch(err => console.log(err));
+			}).catch(err => SendError("getPlaylist",err));
 		}
 	}
 	//Search
 	if(command === config.prefix+'search'){
 		const search = msg.content.replace(msg.content.split(' ')[0],'');
-		Search_Video(search,20).then(searchResults => {
-			search_global = searchResults
+		SearchVideo(search).then(({result}) => {
+			search_global = result
 			//console.log(searchResults.items);
 			const SearchEmbed = new Pagination.FieldsEmbed()
 			SearchEmbed.embed.setColor("#0099ff");
@@ -437,19 +436,16 @@ function Voice(msg,command){
 			SearchEmbed.setChannel(msg.channel);
 			SearchEmbed.setElementsPerPage(10);
 			SearchEmbed.setAuthorizedUsers([]);
-			var array = [];
-			array.length = searchResults.length;
-			for(count=0;count<array.length;count++){
-				array[count] = count;
-			}
+
+			let array = result.map((value,index) => index)
 			SearchEmbed.setArray(array);
 			SearchEmbed.formatField('Musics', (i) => {
-				const time = searchResults[i].seconds;
+				const time = result[i].seconds;
 				const minutes = Math.floor(time/60) > 1? Math.floor(time/60):"00";
 				const seconds = time-(Math.floor(time/60)*60);
 				const hours = Math.floor(time / 3600) > 1? Math.floor(time / 3600) : "00";
 
-				return `**Song ${(i+1)}** ${searchResults[i].title} **${hours}:${minutes}:${seconds}**`
+				return `**Song ${(i+1)}** ${result[i].title} **${hours}:${minutes}:${seconds}**`
 			});
 			SearchEmbed.setDisabledNavigationEmojis(['delete','jump']);
 			SearchEmbed.build();	
@@ -461,10 +457,8 @@ function Voice(msg,command){
 	//Search Result
 	if(search_waiting === true && parseInt(msg.content) > 0){
 		const number = (msg.content-1);
-		const searchUrl = search_global[number].url;
-		const searchTitle = search_global[number].title;
-		const searchSeconds = search_global[number].seconds;
-		queue_global[0] = {title:searchTitle,url:searchUrl,seconds:searchSeconds}
+		queue_global[0] = search_global[number]
+		console.log(search_global[number])		
 		queue_number = 1;
 		define_musica(voiceChannel);
 		msg.channel.send("Playing the song: "+search_global[number].title);
@@ -550,12 +544,16 @@ function Voice(msg,command){
 		const url = msg.content.split(' ')[1];
 		const playlistId = getPlaylistId(url)
 		
-		if(playlistId === undefined){
+		if(!playlistId){
 			//Video
 			if(ytdl.validateURL(url)){
-				AddMusic(url).then(queue => {
-					queue_global.push(queue);
-					msg.channel.send("Added: **"+queue.title+"** to the queue");
+				const id = ytdl.getVideoID(url)
+
+				getVideoInfo(id).then(result => {
+					result.url = url
+
+					queue_global.push(result);
+					msg.channel.send(`Added: **${result.title}** from **${result.author}** to the queue`);
 					if(queue_global.length==1){
 						queue_number = 1;
 						define_musica(voiceChannel);
@@ -565,15 +563,15 @@ function Voice(msg,command){
 						define_musica(voiceChannel);
 						last_song = false;
 					}
-				}).catch(err => console.log(err))				
+				}).catch(err => SendError("getVideoInfo",err))				
 			}
 			else{
 			//Search
 				const search = msg.content.replace(msg.content.split(' ')[0],'');
-				Search_Video(search,1).then(queue => {
-					const video = queue[0];
+				SearchVideo(search,1).then(({result}) => {
+					const video = result[0]
 					queue_global.push(video);
-					msg.channel.send("Added: **"+video.title+"** to the queue");
+					msg.channel.send(`Added: **${video.title}** to the queue`);
 					if(queue_global.length==1){
 						queue_number = 1;
 						define_musica(voiceChannel);
@@ -583,15 +581,18 @@ function Voice(msg,command){
 						define_musica(voiceChannel);
 						last_song = false;
 					}
-				}).catch(err => console.log(err))
+				}).catch(err => SendError("SearchVideo",err))
 			}
 		}
 		else{
 			//Playlist
-			AddPlaylist(playlistId).then(({items,title}) => {
-				Array.prototype.push.apply(queue_global,items)
-				const listsize = queue_global.length
-				msg.channel.send("Added the playlist: **"+title+"** to the queue");
+			getPlaylist(playlistId).then(result => {
+				const { items, title, author } = result
+				queue_global = queue_global.concat(items)
+				const listsize = items.length
+
+				msg.channel.send(`Added the playlist: **${title}** from **${author}** to the queue`);
+
 				if(queue_global.length == listsize){
 					queue_number = 1;
 					define_musica(voiceChannel);
@@ -601,7 +602,7 @@ function Voice(msg,command){
 					define_musica(voiceChannel);
 					last_song = false;
 				}
-			}).catch(err => console.log(err))
+			}).catch(err =>  SendError("AddPlaylist",err))
 		}
 		
 	}
@@ -725,12 +726,11 @@ function define_musica(voiceChannel,time){
 			}
 		})
 		dispatcher.on('error',(err) => { 
-			console.log('---DISPATCHER ERROR---\n'+err);
-			testChannel.send('---DISPATCHER ERROR---\n'+err)
+			SendError("Dispatcher",err)
 		})
 	}).catch((er) => {
 		console.log(er)
-		testChannel.send('---CONNECTION ERROR---\n'+err)
+		SendError("Connection",err)
 	});
 }
 function Leave(){
@@ -742,9 +742,7 @@ function Leave(){
 		voice_global.leave();
 	}
 	catch(error){
-		console.log("------ ERRO NO LEAVE ------")
-		testChannel.send("------ ERRO NO LEAVE ------")
-		console.log(error);
+		SendError('Leave',error)
 	}
 }
 function CurrentPlayingEmbed(channel,video,index){
@@ -752,7 +750,7 @@ function CurrentPlayingEmbed(channel,video,index){
 	CurrentPlayingEmbed.setColor("#0099ff");
 	CurrentPlayingEmbed.setTitle("Current Playing Song "+index);
 	CurrentPlayingEmbed.setDescription(video.title);
-	CurrentPlayingEmbed.setImage(video.image);
+	CurrentPlayingEmbed.setImage(video.image.url);
 	channel.send(CurrentPlayingEmbed);
 }
 
@@ -774,9 +772,6 @@ function GetId(id){
 	//console.log(channel_id);
 	return channel_id;
 }
-function ToSeconds(time){
-	return parseFloat(time.split(':')[0])*60 + parseFloat(time.split(':')[1])
-}
 function MusicStatus(music){
 	if(!paused_global){
 		client.user.setActivity(`${music.title}`, { type: 'LISTENING' });
@@ -786,8 +781,13 @@ function MusicStatus(music){
 	}
 }
 function getPlaylistId(url){
-	const id = new URL(url).searchParams.get('list')
-	return id
+	try{
+		const id = new URL(url).searchParams.get('list')
+		return id
+	}
+	catch(err){
+		return undefined
+	}
 }
 
 //Requests
@@ -806,45 +806,7 @@ function MongoSelect(query,collection,projection_received){
 		}, 1000);
 	});
 }
-function AddMusic(url){
-	return ytdl.getBasicInfo(url).then(({videoDetails}) => {
-		const {title,lengthSeconds,thumbnail} = videoDetails
-		const image = thumbnail.thumbnails[3].url
 
-		return {title:title,url:url,seconds:lengthSeconds,image:image}
-	}).catch(err => {
-		console.log("--Erro no AddMusic--\n"+err)
-		testChannel.send("--Erro no AddMusic--\n"+err)
-	});
-}
-function AddPlaylist(id){
-	const {getPlaylist} = require('./ytSearch')
-
-	getPlaylist(id).then(playlist => {
-		console.log(playlist)
-		console.log('total '+playlist.length)
-	})
-	.catch(err => {
-		console.error("--Erro no AddPlaylist--\n"+err);
-		testChannel.send("--Erro no AddPlaylist--\n"+err)
-	})
-	
-}
-function Search_Video(name,limit){
-	return ytsr.getFilters(name).then((filters1) => {
-		const filter1 = filters1.get('Type').find(o => o.name === 'Video');
-		const options = {
-			limit: limit,
-			nextpageRef: filter1.ref,
-		}
-		return ytsr(null, options).then(({items}) => {
-			return items.map(value => {
-				const seconds = ToSeconds(value.duration)
-				return {title:value.title,url:value.link,seconds:seconds,image:value.thumbnail}
-			})
-		});
-	}).catch(err => {
-		console.error("--Erro no Search--\n"+err);
-		testChannel.send("--Erro no Search--\n"+err)
-	});
+module.exports = {
+	client
 }
