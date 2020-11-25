@@ -661,7 +661,7 @@ function Voice(msg,command){
 	}
 	//Time
 	if(command === config.prefix+'time'){
-		const time = msg.content.split(' ')[1];
+		const time = msg.content.split(' ')[1]
 		const template = new RegExp(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
 		if(template.test(time)){
 			const hasMinutes = time.split(':').length === 2
@@ -672,6 +672,7 @@ function Voice(msg,command){
 
 			const total = parseFloat(seconds) + parseFloat(minutes)*60 + parseFloat(hours)*60*60
 			define_musica(voiceChannel,total)
+			msg.channel.send("May not work to some videos, not my fault!");
 			msg.channel.send("Done!");
 		}
 		else{
@@ -682,26 +683,24 @@ function Voice(msg,command){
 function define_musica(voiceChannel,time){
 	voice_global = voiceChannel;
 	queue_tamanho = queue_global.length;
-	let filter = "audioonly";
-	//console.log("index: "+(queue_number-1));
+
+	let filter = "audio";
 	const music = queue_global[(queue_number-1)];
 
-	if(music.url.split('t=')[1]){
+	//para lives e timings específicos: filter=audio
+	if(!time && music.url.split('t=')[1]){
 		time = new URL(music.url).searchParams.get('t');
-		filter = "audio"
 	}
-	else if(time !== undefined){
-		filter = "audio"
+	if(!time && !music.url.split('t=')[1] && !music.isLive){
+		filter = 'audioonly'
 	}
-	else{
-		time = 0
-	}
+	
 	//console.log('baixando video a partir de '+time+'s')
 	//console.log(queue_global)
-	//para lives: filter: audio
+	
 
 	voiceChannel.join().then(connection => {
-		const stream = ytdl(music.url, { begin: `${time}s`, filter: 'audio', quality: 'highestaudio', highWaterMark: 1 << 25});
+		const stream = ytdl(music.url, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
 
 		dispatcher = connection.play(stream)
 

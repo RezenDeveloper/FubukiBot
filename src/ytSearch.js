@@ -49,6 +49,7 @@ function getVideoInfo(id) {
         const {privacyStatus} = status
         const seconds = moment.duration(contentDetails.duration, moment.ISO_8601).asSeconds()
         const image = thumbnails.maxres
+        const isLive = liveBroadcastContent === "live"
         return {
             title,
             description,
@@ -56,7 +57,7 @@ function getVideoInfo(id) {
             seconds,
             publishedAt,
             author:channelTitle,
-            liveBroadcastContent,
+            isLive,
             status:privacyStatus
         }
     })

@@ -4,7 +4,8 @@
     "description": "Fubuki-chan",
     "main": "bot.js",
     "scripts": {
-        "start": "node src/bot.js"
+        "start": "node view/index.html",
+        "worker": "node src/bot.js"
     },
     "author": "Willis-Kun",
     "dependencies": {
