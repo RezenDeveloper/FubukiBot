@@ -3,8 +3,6 @@ const config = require('../config.json');
 
 const client = new Discord.Client();
 const ytdl = require('ytdl-core');
-const ytpl = require('ytpl');
-const ytsr = require('ytsr');
 const Pagination = require('discord-paginationembed');
 const { SearchVideo, getPlaylist, getVideoInfo } = require('./ytSearch')
 const { SendError,SetTestChannel } = require('./utils')

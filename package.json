@@ -17,8 +17,6 @@
         "ffmpeg-static": "^4.2.6",
         "moment": "^2.29.1",
         "mongodb": "^3.6.1",
-        "ytdl-core": "^4.0.6",
-        "ytpl": "^1.0.1",
-        "ytsr": "^1.0.4"
+        "ytdl-core": "^4.0.6"
     }
 }
