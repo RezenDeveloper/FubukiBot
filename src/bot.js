@@ -5,7 +5,7 @@ const client = new Discord.Client();
 const ytdl = require('ytdl-core');
 const Pagination = require('discord-paginationembed');
 const { SearchVideo, getPlaylist, getVideoInfo } = require('./ytSearch')
-const { SendError,SetTestChannel } = require('./utils')
+const { SendError, SetTestChannel, getPlaylistId, GetChannelId, MusicStatus } = require('./utils')
 
 const MongoClient = require('mongodb').MongoClient;
 
@@ -17,7 +17,6 @@ let search_waiting=false, last_song = false, offline = false, paused_global=fals
 let queue_number = 0, queue_tamanho = 0;
 let queue_global = [];
 const botId = config.botId;
-let testChannel;
 let dispatcher = undefined;
 
 /*
@@ -282,7 +281,7 @@ function Fubuki_Adm(msg){
 			var send_msg = msg.content.split(' ')[2];
 			var channel_id = msg.content.split(' ')[1];
 			try{
-				channel_id = GetId(channel_id);
+				channel_id = GetChannelId(channel_id);
 				const chan = client.channels.cache.get(channel_id);
 				chan.send(send_msg);
 				msg.channel.send('Done!');
@@ -306,7 +305,7 @@ function Fubuki_Adm(msg){
 			}
 			var msg_id = msg.content.split(' ')[1];
 			var channel_id = msg.content.split(' ')[2];
-			channel_id = GetId(channel_id);
+			channel_id = GetChannelId(channel_id);
 			try{
 				const chan = client.channels.cache.get(channel_id);
 				var deleted = false;
@@ -642,14 +641,17 @@ function Voice(msg,command){
 	//Pause
 	if(command === config.prefix+'pause'){
 		if(dispatcher !== undefined){
+			const music = queue_global[(queue_number-1)];
 			if(!paused_global){
 				msg.channel.send("<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>");
 				paused_global = true
+				MusicStatus();
 				dispatcher.pause();
 			}
 			else{
 				msg.channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>");
 				paused_global = false;
+				MusicStatus(music);
 				dispatcher.resume()
 			}
 		}
@@ -709,7 +711,7 @@ function define_musica(voiceChannel,time){
 			if(dispatcherEnd){
 				dispatcher = undefined
 				dispatcherEnd = false
-				client.user.setActivity("");
+				MusicStatus()
 			}
 			else{
 				//console.log('number: '+queue_number+" tamanho "+queue_tamanho);
@@ -725,8 +727,7 @@ function define_musica(voiceChannel,time){
 		dispatcher.on('error',(err) => { 
 			SendError("Dispatcher",err)
 		})
-	}).catch((er) => {
-		console.log(er)
+	}).catch((err) => {
 		SendError("Connection",err)
 	});
 }
@@ -749,42 +750,6 @@ function CurrentPlayingEmbed(channel,video,index){
 	CurrentPlayingEmbed.setDescription(video.title);
 	CurrentPlayingEmbed.setImage(video.image.url);
 	channel.send(CurrentPlayingEmbed);
-}
-
-//Functions
-function GetId(id){
-	var channel_id = id;
-	if(id.toLowerCase() == "massagens"){
-		channel_id = "455914991552561154";
-	}
-	if(id.toLowerCase() == "memes"){
-		channel_id = "700872324626382848";
-	}
-	if(id.toLowerCase() == "weeb_shit"){
-		channel_id = "700872385561100489";
-	}
-	if(id.toLowerCase() == "teste"){
-		channel_id = "708082957524664384";
-	}
-	//console.log(channel_id);
-	return channel_id;
-}
-function MusicStatus(music){
-	if(!paused_global){
-		client.user.setActivity(`${music.title}`, { type: 'LISTENING' });
-	}
-	else{
-		client.user.setActivity("");
-	}
-}
-function getPlaylistId(url){
-	try{
-		const id = new URL(url).searchParams.get('list')
-		return id
-	}
-	catch(err){
-		return undefined
-	}
 }
 
 //Requests
