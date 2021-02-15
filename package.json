@@ -4,19 +4,24 @@
     "description": "Fubuki-chan",
     "main": "bot.js",
     "scripts": {
-        "start": "node view/index.html",
-        "worker": "node src/bot.js"
+        "dev": "nodemon src/bot.ts",
+        "build": "sucrase ./src -d ./dist --transforms typescript,imports"
     },
     "author": "Willis-Kun",
     "dependencies": {
-        "@discordjs/opus": "^0.3.3",
-        "axios": "^0.21.0",
-        "buffer": "^5.6.0",
+        "@discordjs/opus": "^0.4.0",
+        "axios": "^0.21.1",
+        "buffer": "^6.0.3",
         "discord-paginationembed": "^2.1.0",
-        "discord.js": "^12.4.1",
-        "ffmpeg-static": "^4.2.6",
-        "moment": "^2.29.1",
-        "mongodb": "^3.6.1",
-        "ytdl-core": "^4.1.1"
+        "discord.js": "^12.5.1",
+        "ffmpeg-static": "^4.2.7",
+        "mongodb": "^3.6.4",
+        "ytdl-core": "^4.4.5"
+    },
+    "devDependencies": {
+        "@types/mongodb": "^3.6.7",
+        "nodemon": "^2.0.7",
+        "sucrase": "^3.17.1",
+        "typescript": "^4.1.5"
     }
 }
