@@ -1,41 +1,48 @@
-import Discord, { VoiceChannel } from 'discord.js'
-import { getConfig, hasCommands } from './utils/utils'
+import Discord from 'discord.js'
+import { getNickname, hasCommands } from './utils/utils'
 import { useTextCommands } from './commands/useTextCommands'
-import { useVoiceCommands } from './commands/useVoiceCommands'
+import { useVoiceCommands, searchWaiting } from './commands/useVoiceCommands'
+import { config, searchObj } from './commands/commandClasses';
 
-export let data:Iconfig
-export let CurrentVoiceChannel:VoiceChannel
-const client = new Discord.Client()
+export const client = new Discord.Client()
 const { TOKEN } = process.env;
 
-process.on('unhandledRejection', error => {
-	console.error('Uncaught Promise Rejection', error)
-});
+client.login(TOKEN);
 
 client.once('ready', async () => {
-    data = await getConfig()
     console.log('Ready!');
 });
 
 client.on('message', async message => {
-    const { content } = message
-    const { prefix, textCommands, voiceCommands } = data 
-
-    if(content.charAt(0) === prefix){
-
-        let command = hasCommands(textCommands, content, prefix)
+    const { content, channel, author } = message
+    const configData = await config.getConfig()
+    const { prefix, textCommands, voiceCommands } = configData
+    
+    if(searchObj.getWaiting){
+        await searchWaiting(message)
+    }
+    else if(content.charAt(0) === prefix){
+        let command = hasCommands(textCommands, content, prefix, (message) => {
+            channel.send(message)
+        })
         if(command){
-            await useTextCommands(message, command)
+            await useTextCommands(message, command as Icommand)
+            return
         }
-        else{
-            command = hasCommands(voiceCommands, content, prefix)
-            if(command) useVoiceCommands(message, command)
+
+        command = hasCommands(voiceCommands, content, prefix, (message) => {
+            channel.send(message)
+        })
+        
+        if(command && channel.type === "text") {
+            await useVoiceCommands(message, command as IcommandVoice)
+        }
+        else if(command && channel.type !== "text") {
+            channel.send(`Sorry ${await getNickname(author)}, i can't do that on this channel.`)
         }
     }
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
-    console.log('voice update!')
+    
 });
-
-client.login(TOKEN);

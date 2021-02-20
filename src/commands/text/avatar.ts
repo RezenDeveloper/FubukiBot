@@ -1,5 +1,4 @@
 import Discord, { Message } from 'discord.js'
-import { data } from '../../bot'
 
 export const avatar = (message:Message) => {
     const AvatarEmbed = new Discord.MessageEmbed();

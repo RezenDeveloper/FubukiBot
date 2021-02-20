@@ -1,9 +1,9 @@
 import Discord, { Message } from 'discord.js'
-import { data } from '../../bot'
+import { config } from '../commandClasses'
 
-export const help = (message:Message) => {
+export const help = async (message:Message) => {
     const { channel } = message
-    const { prefix, voiceCommands, textCommands } = data
+    const { prefix, voiceCommands, textCommands } = await config.getConfig()
 
     const chatValues = textCommands.map(({description, name}) => {
         return `**${prefix}${name}** - ${description}\n`
