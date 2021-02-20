@@ -2,6 +2,7 @@ import { Message, TextChannel } from "discord.js";
 import { currentQueue } from '../commandClasses';
 import { FieldsEmbed } from 'discord-paginationembed'
 import { playCurrentMusic } from './playCurrentMusic';
+import { getCheckEmote, getErrorEmote } from "../../utils/utils";
 
 export const queue = (message:Message) => {
 
@@ -10,6 +11,7 @@ export const queue = (message:Message) => {
 
     if(currentQueueArray.length === 0){
         channel.send("There's no queue to show")
+        message.react(getErrorEmote())
         return;
     }
     const number = parseFloat(content.split(' ')[1]);
@@ -38,9 +40,11 @@ export const queue = (message:Message) => {
         if(number <= currentQueueArray.length && number > 0){
             currentQueue.setIndex = (number-1)
             playCurrentMusic()
+            message.react(getCheckEmote(message))
         }
         else{
             channel.send("This is not a valid number");
+            message.react(getErrorEmote())
         }
     }
 }

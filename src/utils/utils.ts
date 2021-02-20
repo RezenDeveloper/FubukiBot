@@ -1,5 +1,5 @@
 import { MongoSearch } from "../database/bd"
-import { Channel, TextChannel, User } from 'discord.js'
+import { EmojiResolvable, Message, User } from 'discord.js'
 import { client } from '../bot'
 import { URL } from 'url'
  
@@ -75,4 +75,13 @@ export const setStatus = async (status:string, type:"LISTENING" | "PLAYING" | "S
 }
 export const clearStatus = async () => {
     await client.user!.setActivity("");
+}
+
+export const getCheckEmote = (message:Message) => {
+    let reactionEmoji:EmojiResolvable | undefined = message.guild!.emojis.cache.find(emoji => emoji.name === 'jojokay');
+    return reactionEmoji = reactionEmoji? reactionEmoji : '☑️'
+}
+
+export const getErrorEmote = () => {
+    return '❌'
 }

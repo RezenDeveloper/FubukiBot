@@ -17,7 +17,7 @@
         "ffmpeg-static": "^4.2.7",
         "moment": "^2.29.1",
         "mongodb": "^3.6.4",
-        "ytdl-core": "^4.4.5"
+        "ytdl-core": "^4.5.0"
     },
     "devDependencies": {
         "@types/mongodb": "^3.6.7",

@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import { config } from '../commandClasses';
-import { setStatus as setStatusUtils, clearStatus as clearStatusUtils } from './../../utils/utils';
+import { setStatus as setStatusUtils, clearStatus as clearStatusUtils, getCheckEmote } from './../../utils/utils';
 
 type statusType = "LISTENING" | "PLAYING" | "STREAMING" | "WATCHING" | "COMPETING" | "CUSTOM_STATUS"
 
@@ -18,6 +18,7 @@ export const setStatus = async (message:Message) => {
     }
     else{
         setStatusUtils(status, type.toUpperCase() as statusType)
+        message.react(getCheckEmote(message))
     }
 
 }

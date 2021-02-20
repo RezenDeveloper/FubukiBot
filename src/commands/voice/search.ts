@@ -11,20 +11,33 @@ export const search = async (message:Message, waiting?:boolean) => {
     const nick = await getNickname(author)
     
     if(waiting){
-        const index = (parseInt(content) -1);
-        const queue = currentQueue.getQueue
         const searchQueue = searchObj.getSearchQueue
-        const music = searchQueue[index]
+        
+        if(/^([0-9]+,?\s*)+$/g.test(content)){
+            const numbers = content.split(',')
+            numbers.forEach(value => {
+                const queue = currentQueue.getQueue
+                const index = (parseInt(value) -1);
 
-        if(parseInt(content) >= 0 && parseInt(content) < searchQueue.length ){
-            currentQueue.setQueue = [
-                ...queue,
-                music
-            ]
-            playCurrentMusic()
-            channel.send(`Playing the song: ${music.title}`);
-            searchObj.setWaiting = false;
-            searchObj.setSearchQueue = []
+                if(index > searchQueue.length){
+                    channel.send(`${value} is not a valid number!`);
+                    return
+                }
+                const music = searchQueue[index]
+                currentQueue.setQueue = [
+                    ...queue,
+                    music
+                ]
+                if(queue.length === 0){
+                    playCurrentMusic()
+                    channel.send(`Playing the song: ${music.title}`);
+                }
+                else{
+                    channel.send(`Added ${music.title} to the queue`);
+                }
+                searchObj.setWaiting = false;
+                searchObj.setSearchQueue = []
+            })
         }
         else{
             channel.send(`Please send me a valid number ${nick}`)
@@ -58,7 +71,7 @@ export const search = async (message:Message, waiting?:boolean) => {
         SearchEmbed.setDisabledNavigationEmojis(['delete','jump']);	
         SearchEmbed.setTimeout(0);
         searchObj.setWaiting = true;
-        channel.send(`What's the number of the sound that you want to play ${nick}?`);
+        channel.send(`What's the number of the sound that you want to play ${nick}? \nYou can choose more than one using commas`);
         SearchEmbed.build()
     }).catch(err => {
         SendError("SearchEmbed",err)

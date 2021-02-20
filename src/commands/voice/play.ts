@@ -1,6 +1,6 @@
-import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
+import { DMChannel, EmojiResolvable, Message, NewsChannel, TextChannel } from 'discord.js'
 import { currentQueue } from '../commandClasses'
-import { getPlaylistId, SendError } from '../../utils/utils'
+import { getCheckEmote, getPlaylistId, SendError } from '../../utils/utils'
 import { SearchVideo, getVideoInfo, getPlaylist } from '../../utils/api/ytSearch' 
 import ytdl from 'ytdl-core'
 import { playCurrentMusic } from './playCurrentMusic';
@@ -40,6 +40,7 @@ export const play = (message:Message, add?:boolean) => {
                 playCurrentMusic()
             }
             channel.send(`Playing the playlist **${title}**\n From ${author} with ${itemCount} songs!`);
+            message.react(getCheckEmote(message))
         }).catch(err => SendError("getPlaylist",err));
     }
     //Is a valid url
@@ -70,10 +71,11 @@ export const play = (message:Message, add?:boolean) => {
                 
             }
             sendTitle(channel, result.title, "Play")
+            message.react(getCheckEmote(message))
             playCurrentMusic()
         }).catch(err => SendError("getVideoInfo",err))
     }
-    //Is just a name
+    //It's just a name
     else{
         const name = content.replace(content.split(' ')[0],'')
         SearchVideo(name, 1).then(({result}) => {
@@ -85,12 +87,14 @@ export const play = (message:Message, add?:boolean) => {
                     result[0]
                 ]
                 sendTitle(channel, title ,"Add")
+                message.react(getCheckEmote(message))
             }
             //Start a new queue
             else{
                 currentQueue.setQueue = result
                 playCurrentMusic()
                 sendTitle(channel, title, "Play")
+                message.react(getCheckEmote(message))
             }
         }).catch(err => SendError("SearchVideo",err))
     }

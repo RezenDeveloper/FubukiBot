@@ -2,6 +2,7 @@ import { Channel, DMChannel, Message, NewsChannel, TextChannel } from 'discord.j
 import { config } from '../commandClasses';
 import { MongoSearch } from './../../database/bd';
 import { client } from './../../bot';
+import { getCheckEmote, getErrorEmote } from '../../utils/utils';
 
 type someChannel = TextChannel | DMChannel | NewsChannel
 export const sendMessage = async (message:Message) => {
@@ -13,17 +14,21 @@ export const sendMessage = async (message:Message) => {
     const send = (sendChannel: Channel | undefined) => {
         if(!sendChannel){
             channel.send('Sorry, i could not find a channel with this id')
+            message.react(getErrorEmote())
             return
         }
         if(!sendChannel.isText()){
             channel.send('This is not a valid channel')
+            message.react(getErrorEmote())
             return
         }
         sendChannel.send(text)
+        message.react(getCheckEmote(message))
     }
     
     if(!id || !text){
         channel.send(`Wrong sentence. Try ${(await config.getConfig).prefix}sendMessage (channelID) (message)`)
+        message.react(getErrorEmote())
         return
     }
     if(parseFloat(id) !== NaN && id.length === 18){
@@ -44,6 +49,7 @@ export const deleteMessage = async (message:Message) => {
 
     if(!messageId || !channelId){
         channel.send(`Wrong sentence. Try ${(await config.getConfig).prefix}deleteMessage (messageID) (channelID)`)
+        message.react(getErrorEmote())
         return
     }
     let sendChannel: Channel | undefined
@@ -55,10 +61,12 @@ export const deleteMessage = async (message:Message) => {
     }
     if(!sendChannel){
         channel.send('Sorry, i could not find a channel with this id')
+        message.react(getErrorEmote())
         return
     }
     if(!sendChannel.isText()){
         channel.send('This is not a valid channel')
+        message.react(getErrorEmote())
         return
     }
     if(parseFloat(messageId) !== NaN && messageId.length === 18){
@@ -69,13 +77,16 @@ export const deleteMessage = async (message:Message) => {
         if(msgToDelete){
             if(msgToDelete.deletable){
                 msgToDelete.delete()
+                message.react(getCheckEmote(message))
             }
             else{
                 channel.send(`I can't delete this message`)
+                message.react(getErrorEmote())
             }
         }
         else{
             channel.send(`I couldn't find a message with this id`)
+            message.react(getErrorEmote())
         }
     }
     

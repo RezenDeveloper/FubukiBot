@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import { getCheckEmote, getErrorEmote } from '../../utils/utils';
 import { currentQueue } from '../commandClasses';
 import { playCurrentMusic } from './playCurrentMusic';
 
@@ -19,9 +20,10 @@ export const time = (message:Message) => {
         currentQueue.setTime = total
         channel.send("May not work to some videos, not my fault!");
         playCurrentMusic()
-        channel.send("Done!");
+        message.react(getCheckEmote(message))
     }
     else{
         channel.send("Please send a valid time (HH:MM:SS)");
+        message.react(getErrorEmote())
     }
 }
