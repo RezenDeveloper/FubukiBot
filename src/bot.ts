@@ -1,7 +1,8 @@
-import Discord from 'discord.js'
+import Discord, {Message} from 'discord.js'
 import { getNickname, hasCommands } from './utils/utils'
 import { useTextCommands } from './commands/useTextCommands'
 import { useVoiceCommands, searchWaiting } from './commands/useVoiceCommands'
+import { useAdminCommands } from './commands/useAdminCommands'
 import { config, searchObj } from './commands/commandClasses';
 
 export const client = new Discord.Client()
@@ -14,35 +15,85 @@ client.once('ready', async () => {
 });
 
 client.on('message', async message => {
-    const { content, channel, author } = message
-    const configData = await config.getConfig()
-    const { prefix, textCommands, voiceCommands } = configData
-    
+    const configData = await config.getConfig
+
     if(searchObj.getWaiting){
         await searchWaiting(message)
+        return
     }
-    else if(content.charAt(0) === prefix){
-        let command = hasCommands(textCommands, content, prefix, (message) => {
-            channel.send(message)
-        })
-        if(command){
-            await useTextCommands(message, command as Icommand)
-            return
-        }
-
-        command = hasCommands(voiceCommands, content, prefix, (message) => {
-            channel.send(message)
-        })
-        
-        if(command && channel.type === "text") {
-            await useVoiceCommands(message, command as IcommandVoice)
-        }
-        else if(command && channel.type !== "text") {
-            channel.send(`Sorry ${await getNickname(author)}, i can't do that on this channel.`)
-        }
+    else if(message.content.charAt(0) === configData.prefix){
+        if(await TextCommand(configData, message)) return
+        if(await VoiceCommand(configData, message)) return
+        if(await AdminCommand(configData, message, configData.admins)) return
     }
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     
 });
+
+const TextCommand = async (configData:Iconfig, message:Message) => {
+    const { content, channel } = message
+    const { prefix, textCommands } = configData
+    let errorMessage = false
+
+    const command = hasCommands(textCommands, content, prefix, (message) => {
+        channel.send(message)
+        errorMessage = true
+    })
+    if(command){
+        await useTextCommands(message, command as Icommand)
+        return true
+    }
+    else if (errorMessage){
+        return true
+    }
+}
+
+const VoiceCommand = async (configData:Iconfig, message:Message) => {
+    const { content, channel, author } = message
+    const { prefix, voiceCommands } = configData
+    let errorMessage = false
+    
+    const command = hasCommands(voiceCommands, content, prefix, (message) => { 
+        channel.send(message)
+        errorMessage = true
+    })
+    if(command && channel.type === "text") {
+        await useVoiceCommands(message, command as IcommandVoice)
+        return true
+    }
+    else if(command && channel.type !== "text") {
+        channel.send(`Sorry ${await getNickname(author)}, i can't do that on this channel.`)
+        return true
+    }
+    else if (errorMessage){
+        return true
+    }
+}
+
+const AdminCommand = async (configData:Iconfig, message:Message, adminArray:string[]) => {
+    const { content, channel, author } = message
+    const { prefix, adminCommands} = configData
+    let errorMessage = false
+
+    const id = adminArray.find(id => {
+        return id === author.id
+    })
+    if(!id){
+        channel.send("You don't have the authority for this, baka!")
+        return true
+    }
+
+    const command = hasCommands(adminCommands, content, prefix, (message) => {
+        channel.send(message)
+        errorMessage = true
+    })
+    if(command){
+        await useAdminCommands(message, command as Icommand)
+        return true
+    }
+    else if (errorMessage){
+        return true
+    }
+}

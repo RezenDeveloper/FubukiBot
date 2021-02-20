@@ -1,12 +1,12 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
-import { clearMusicStatus, SendError, setMusicStatus } from "../utils/utils"
-import { getConfig } from './../utils/utils';
+import { clearStatus, SendError, setStatus } from "../utils/utils"
+import { getDBConfig } from './../utils/utils';
 
 class ConfigClass {
-    private config = getConfig()
+    private config = getDBConfig()
 
-    async getConfig(){
-        return await this.config
+    get getConfig(){
+        return this.config
     }
 }
 
@@ -64,16 +64,16 @@ class VoiceChannelClass {
     }
     listenDispatcher(){
         this.dispatcher!.on("start", async () => {
-            await setMusicStatus(this.musicStatus!)
+            await setStatus(this.musicStatus!, 'LISTENING')
             this.dispatcherStatus = 'running'
         })
         this.dispatcher!.on('error', async (err) => { 
             SendError("Dispatcher",err)
-            await clearMusicStatus()
+            await clearStatus()
             this.dispatcherStatus = 'ended'
         })
         this.dispatcher!.on('close', async () => { 
-            await clearMusicStatus()
+            await clearStatus()
             this.dispatcherStatus = 'ended'
         })
     }
@@ -91,7 +91,6 @@ class QueueClass {
     }
     //Queue
     set setQueue(queue:iVideo[]) {
-        console.log('queue setted')
         this.queue = queue
     }
     get getQueue(){

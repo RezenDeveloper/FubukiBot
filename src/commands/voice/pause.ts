@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { clearMusicStatus, setMusicStatus } from "../../utils/utils";
+import { clearStatus, setStatus } from "../../utils/utils";
 import { currentQueue, currentVoiceChannel } from '../commandClasses'
 
 export const pause = async (message:Message) => {
@@ -16,12 +16,12 @@ export const pause = async (message:Message) => {
     if(voiceChannel && dispatcher && connection){
         if(dispatcher.paused){
             channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>")
-            await setMusicStatus(currentQueue.getQueue[currentQueue.getIndex].title)
+            await setStatus(currentQueue.getQueue[currentQueue.getIndex].title, 'LISTENING')
             dispatcher.resume()
         }
         else{
             channel.send('<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>')
-            await clearMusicStatus()
+            await clearStatus()
             dispatcher.pause()
         }
     }

@@ -3,7 +3,9 @@ interface Iconfig {
     prefix: string
     textCommands: Icommand[]
     voiceCommands: IcommandVoice[]
+    adminCommands:Icommand[]
     botId: string
+    admins:string[]
 }
 interface Icommand {
     name: string
@@ -24,4 +26,8 @@ interface iVideo{
     author:string
     isLive:boolean
     status:string
+}
+interface Ichannels{
+    name:string
+    id:string
 }

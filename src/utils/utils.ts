@@ -10,7 +10,7 @@ interface iNickname {
 
 let result:iNickname[]
 
-export const getConfig = async () => {
+export const getDBConfig = async () => {
     const config:Iconfig[] = await MongoSearch('configs', {});
     return config[0]
 }
@@ -66,9 +66,13 @@ export const SendError = (from:string, error:Error) => {
     })
 } 
 
-export const setMusicStatus = async (title:string) => {
-	await client.user!.setActivity(`${title}`, { type: 'LISTENING' });
+export const setStatus = async (status:string, type:"LISTENING" | "PLAYING" | "STREAMING" | "WATCHING" | "CUSTOM_STATUS" | "COMPETING") => {
+	try {
+        await client.user!.setActivity(`${status}`, { type });
+    } catch (err) {
+        console.log(err)
+    }
 }
-export const clearMusicStatus = async () => {
+export const clearStatus = async () => {
     await client.user!.setActivity("");
 }
