@@ -1,5 +1,4 @@
 interface Iconfig {
-    _id: ObjectId
     prefix: string
     textCommands: Icommand[]
     voiceCommands: IcommandVoice[]

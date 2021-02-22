@@ -1,5 +1,4 @@
 node_modules/
-/iniciar.bat
 /dist
 /package-lock.json
 /nodemon.json
