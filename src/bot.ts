@@ -4,6 +4,8 @@ import { useTextCommands } from './commands/useTextCommands'
 import { useVoiceCommands, searchWaiting } from './commands/useVoiceCommands'
 import { useAdminCommands } from './commands/useAdminCommands'
 import { config, searchObj } from './commands/commandClasses';
+import { getIdData } from './utils/api/pixiv';
+import { handlePixivUrl } from './commands/text/pixivUrl';
 
 export const client = new Discord.Client()
 const { TOKEN } = process.env;
@@ -25,6 +27,9 @@ client.on('message', async message => {
         if(await TextCommand(configData, message)) return
         if(await VoiceCommand(configData, message)) return
         if(await AdminCommand(configData, message, configData.admins)) return
+    }
+    else{
+        handlePixivUrl(message)
     }
 });
 

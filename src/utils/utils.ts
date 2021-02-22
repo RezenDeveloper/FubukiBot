@@ -58,7 +58,7 @@ export const getPlaylistId = (url:string) => {
 	}
 }
 
-export const SendError = (from:string, error:Error) => {
+export const SendError = (from:string, error:Error | string) => {
     client.channels.fetch("766870745028493392").then((logChannel) => {
         if(logChannel.isText()){
             logChannel.send(`Error on --${from}--\n${error}`)

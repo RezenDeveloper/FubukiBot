@@ -1,6 +1,6 @@
 import { DMChannel, EmojiResolvable, Message, NewsChannel, TextChannel } from 'discord.js'
 import { currentQueue } from '../commandClasses'
-import { getCheckEmote, getPlaylistId, SendError } from '../../utils/utils'
+import { getCheckEmote, getErrorEmote, getPlaylistId, SendError } from '../../utils/utils'
 import { SearchVideo, getVideoInfo, getPlaylist } from '../../utils/api/ytSearch' 
 import ytdl from 'ytdl-core'
 import { playCurrentMusic } from './playCurrentMusic';
@@ -50,35 +50,36 @@ export const play = (message:Message, add?:boolean) => {
             //Add to the queue
             if(add && currentQueueArray.length !== 0){
                 currentQueue.setQueue = [
-                        ...currentQueueArray,
-                        {
-                            ...result,
-                            url:searchParam
-                        }
-                    ]
-                
-                sendTitle(channel, result.title, "Add")
-                return;
+                    ...currentQueueArray,
+                    {
+                        ...result,
+                        url:searchParam
+                    }
+                ]
             }
             //Start a new queue
             else{
                 currentQueue.setQueue = [
-                        {
-                            ...result,
-                            url:searchParam
-                        }
-                    ]
-                
+                    {
+                        ...result,
+                        url:searchParam
+                    }
+                ]
+                playCurrentMusic()
             }
-            sendTitle(channel, result.title, "Play")
+            sendTitle(channel, result.title, add?"Add":"Play")
             message.react(getCheckEmote(message))
-            playCurrentMusic()
         }).catch(err => SendError("getVideoInfo",err))
     }
     //It's just a name
     else{
         const name = content.replace(content.split(' ')[0],'')
         SearchVideo(name, 1).then(({result}) => {
+            if(!result.length){
+                channel.send(`Sorry, i couldn't find this video`)
+                message.react(getErrorEmote())
+                return
+            }
             const { title } = result[0]
             //Add to the queue
             if(add && currentQueueArray.length !== 0){

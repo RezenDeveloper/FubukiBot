@@ -47,7 +47,7 @@ export const useVoiceCommands = async (message: Message, commandObj?:IcommandVoi
             await search(message)
             break
         case 'clear':
-            await clear(message)
+            clear(message)
             break
         case 'leave':
             leave(message)

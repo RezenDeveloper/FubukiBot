@@ -4,9 +4,8 @@ import { currentQueue, currentVoiceChannel } from '../commandClasses';
 
 export const clear = (message:Message) => {
     
-    currentQueue.setQueue = []
     currentQueue.setIndex = 0
+    currentQueue.setQueue = []
     currentVoiceChannel.endDispatcher()
     message.react(getCheckEmote(message))
-
 }

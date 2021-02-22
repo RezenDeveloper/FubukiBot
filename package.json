@@ -17,6 +17,9 @@
         "ffmpeg-static": "^4.2.7",
         "moment": "^2.29.1",
         "mongodb": "^3.6.4",
+        "pixichan": "^1.2.1",
+        "pixiv-api-client": "^0.25.0",
+        "pixiv.ts": "^0.4.1",
         "ytdl-core": "^4.5.0"
     },
     "devDependencies": {
