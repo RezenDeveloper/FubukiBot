@@ -5,9 +5,12 @@
     "main": "bot.js",
     "scripts": {
         "dev": "nodemon src/bot.ts",
+        "start": "node dist/bot.js",
+        "postinstall": "sucrase ./src -d ./dist --transforms typescript,imports",
         "build": "sucrase ./src -d ./dist --transforms typescript,imports"
     },
     "author": "Willis-Kun",
+    "engines": { "node": "v14.15.1" },
     "dependencies": {
         "@discordjs/opus": "^0.4.0",
         "axios": "^0.21.1",
