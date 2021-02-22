@@ -10,7 +10,9 @@
         "build": "sucrase ./src -d ./dist --transforms typescript,imports"
     },
     "author": "Willis-Kun",
-    "engines": { "node": "v14.15.1" },
+    "engines": {
+        "node": "v14.15.1"
+    },
     "dependencies": {
         "@discordjs/opus": "^0.4.0",
         "axios": "^0.21.1",
@@ -22,7 +24,6 @@
         "mongodb": "^3.6.4",
         "pixichan": "^1.2.1",
         "pixiv-api-client": "^0.25.0",
-        "pixiv.ts": "^0.4.1",
         "ytdl-core": "^4.5.0"
     },
     "devDependencies": {

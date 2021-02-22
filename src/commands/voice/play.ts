@@ -1,4 +1,4 @@
-import { DMChannel, EmojiResolvable, Message, NewsChannel, TextChannel } from 'discord.js'
+import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
 import { currentQueue } from '../commandClasses'
 import { getCheckEmote, getErrorEmote, getPlaylistId, SendError } from '../../utils/utils'
 import { SearchVideo, getVideoInfo, getPlaylist } from '../../utils/api/ytSearch' 

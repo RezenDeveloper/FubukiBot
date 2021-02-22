@@ -1,5 +1,4 @@
 import { Message, MessageEmbed } from 'discord.js'
-import { config } from '../commandClasses';
 import { getAnime } from './../../utils/api/mal';
 import { getDateString, getNickname, getErrorEmote, getCheckEmote, getMessageParams, truncate } from './../../utils/utils';
 
@@ -10,7 +9,9 @@ export const sauce = async (message:Message) => {
     try {
         const data = await getAnime(search, 1) as MALAnime
         const { title, url, score, airing, aired, episodes, synopsis, members, image_url, type, rating, rank, source, studios } = data
-        const DateString = airing? (aired.from? getDateString(new Date(aired.from)) : '(undefined)') : (aired.to? getDateString(new Date(aired.to)) : getDateString(new Date(aired.from)))
+        const DateString = airing? 
+        (aired.from? getDateString(new Date(aired.from)) : '(undefined)') : 
+        (aired.to? getDateString(new Date(aired.to)) : getDateString(new Date(aired.from)))
         
         const SauceEmbed = new MessageEmbed()
         .setColor("#0099ff")

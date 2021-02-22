@@ -102,3 +102,7 @@ export const truncate = ( str:string, n:number ) => {
     const subString = str.substr(0, n-3)
     return subString.substr(0, subString.lastIndexOf(" "))+'...'
 }
+
+export const bytesToMb = (bytes:number) => {
+    return bytes / (1024*1024)
+}

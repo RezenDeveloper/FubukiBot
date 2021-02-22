@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios'
+import axios from 'axios'
 import moment from 'moment'
  
 const key = process.env.YT_KEY;

@@ -1,4 +1,4 @@
-import Discord, { Message } from 'discord.js'
+import { Message } from 'discord.js'
 import { help, avatar, randomFubuki, d100, getDice, d20, sauce } from './text/getTextCommands'
 
 export const useTextCommands = async (message:Message, command:Icommand) => {

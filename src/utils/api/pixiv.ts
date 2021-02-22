@@ -1,7 +1,6 @@
 import PixivApi from 'pixiv-api-client'
 import { SendError } from './../utils';
 import pixichan from 'pixichan'
-import fs from 'fs'
 
 const pixiv = new PixivApi()
 const { PIXIV_REFRESH_TOKEN } = process.env

@@ -1,4 +1,4 @@
-import Discord, { Message } from 'discord.js'
+import { Message } from 'discord.js'
 import { MongoSearch } from '../../database/bd' 
 import { getNickname } from '../../utils/utils'
 

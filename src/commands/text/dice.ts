@@ -1,6 +1,4 @@
-import Discord, { Message } from 'discord.js'
-import { getNickname } from '../../utils/utils'
-
+import { Message } from 'discord.js'
 interface iRandomFubuki {
     name:string,
     url:string
