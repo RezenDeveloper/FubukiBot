@@ -1,6 +1,6 @@
 import { Message, MessageAttachment, MessageEmbed, TextChannel } from 'discord.js';
 import { getIdData, getImage } from './../../utils/api/pixiv';
-import { SendError } from './../../utils/utils';
+import { SendError, getDateString } from './../../utils/utils';
 
 export const handlePixivUrl = async (message:Message) => {
     const { content, channel } = message
@@ -16,9 +16,7 @@ export const handlePixivUrl = async (message:Message) => {
             attachPromises = await [newAttach(meta_single_page.original_image_url)]
         }
         let attachArray = Promise.all(attachPromises)
-        const dateObj = new Date(create_date)
-        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-        const date = `${months[dateObj.getMonth()]}, ${dateObj.getFullYear()}`
+        const date = getDateString(new Date(create_date))
         const PixivEmbed = new MessageEmbed()
         .setColor("#0099ff")
         .setTitle(`${title}`)

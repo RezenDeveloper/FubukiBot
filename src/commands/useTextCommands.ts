@@ -1,5 +1,5 @@
 import Discord, { Message } from 'discord.js'
-import { help, avatar, randomFubuki, d100, getDice, d20 } from './text/getTextCommands'
+import { help, avatar, randomFubuki, d100, getDice, d20, sauce } from './text/getTextCommands'
 
 export const useTextCommands = async (message:Message, command:Icommand) => {
     const { channel } = message
@@ -22,6 +22,9 @@ export const useTextCommands = async (message:Message, command:Icommand) => {
             break
         case 'd100':
             d100(message)
+            break
+        case 'sauce':
+            sauce(message)
             break
     } 
 }

@@ -85,3 +85,20 @@ export const getCheckEmote = (message:Message) => {
 export const getErrorEmote = () => {
     return '❌'
 }
+
+export const getDateString = (dateObj:Date) => {
+    const month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    return `${month[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`
+}
+
+export const getMessageParams = (message:string) => {
+    const array = message.split(' ')!
+    array.shift()
+    return array.join(' ')
+}
+
+export const truncate = ( str:string, n:number ) => {
+    if (str.length <= n) { return str; }
+    const subString = str.substr(0, n-3)
+    return subString.substr(0, subString.lastIndexOf(" "))+'...'
+}
