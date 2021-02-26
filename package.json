@@ -4,7 +4,7 @@
     "description": "Fubuki-chan",
     "main": "bot.js",
     "scripts": {
-        "dev": "nodemon src/bot.ts",
+        "dev": "nodemon src/server/server.ts",
         "start": "node dist/bot.js",
         "postinstall": "sucrase ./src -d ./dist --transforms typescript,imports",
         "build": "sucrase ./src -d ./dist --transforms typescript,imports"
@@ -15,10 +15,14 @@
     },
     "dependencies": {
         "@discordjs/opus": "^0.4.0",
+        "@types/bcryptjs": "^2.4.2",
+        "@types/express": "^4.17.11",
         "axios": "^0.21.1",
+        "bcryptjs": "^2.4.3",
         "buffer": "^6.0.3",
         "discord-paginationembed": "^2.1.0",
         "discord.js": "^12.5.1",
+        "express": "^4.17.1",
         "ffmpeg-static": "^4.2.7",
         "moment": "^2.29.1",
         "mongodb": "^3.6.4",

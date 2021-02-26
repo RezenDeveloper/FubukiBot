@@ -17,8 +17,8 @@ export const handlePixivUrl = async (message:Message) => {
             const { title, user, meta_single_page, meta_pages, total_view, tags, sanity_level, total_bookmarks, create_date, image_urls } = illust
             let attachPromises:Promise<MessageAttachment|undefined>[]
             if(meta_pages.length){
-                attachPromises = meta_pages.map(async ({image_urls: image_urls_pages}) => {
-                    const attach = await newAttach([
+                attachPromises = meta_pages.map(({image_urls: image_urls_pages}) => {
+                    const attach = newAttach([
                         image_urls_pages.original,
                         image_urls_pages.large
                     ])

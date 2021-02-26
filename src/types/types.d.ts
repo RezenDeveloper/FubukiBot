@@ -30,3 +30,13 @@ interface Ichannels{
     name:string
     id:string
 }
+
+interface User {
+    name:string
+    nickName:string
+    password:string
+    identifier:string
+    userId:string
+    currentChannel:string
+    token:string
+}

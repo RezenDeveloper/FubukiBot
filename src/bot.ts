@@ -12,7 +12,7 @@ const { TOKEN } = process.env;
 client.login(TOKEN);
 
 client.once('ready', async () => {
-    console.log('Ready!');
+    console.log('Ready!')
 });
 
 client.on('message', async message => {
