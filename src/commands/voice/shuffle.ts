@@ -17,7 +17,6 @@ export const shuffle = async (message:Message) => {
         return
     }
     currentQueue.shuffleQueue()
-    currentQueue.setIndex = 0
     message.react(getCheckEmote(message))
     playCurrentMusic()
 }

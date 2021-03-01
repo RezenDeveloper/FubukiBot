@@ -1,4 +1,5 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
+import { MongoFindOne, MongoInsertOne, MongoUpdateOne } from "../database/bd";
 import { clearStatus, SendError, setStatus } from "../utils/utils"
 import { getDBConfig } from './../utils/utils';
 
@@ -17,6 +18,7 @@ class VoiceChannelClass {
     private dispatcher?:StreamDispatcher
     private dispatcherStatus:'running'|'ended' = "running"
 
+    //Connection
     set setConnection(connection:VoiceConnection) { 
         if(this.connection) this.endConnection()
         this.connection = connection
@@ -31,6 +33,8 @@ class VoiceChannelClass {
         this.channel = undefined
         this.connection = undefined
     }
+
+    //Dispatcher
     set setDispatcher(dispatcher:StreamDispatcher){
         if(this.dispatcher) this.endDispatcher()
         this.dispatcher = dispatcher
@@ -46,6 +50,8 @@ class VoiceChannelClass {
         this.dispatcher!.destroy()
         this.dispatcherStatus = 'ended'
     }
+
+    //Channel
     set setChannel(channel:VoiceChannel) {
         this.channel = channel
     }
@@ -79,23 +85,117 @@ class VoiceChannelClass {
     }
 }
 
-class QueueClass {
+export const currentVoiceChannel = new VoiceChannelClass()
+class QueueClass{
     private queue:iVideo[]
     private index:number
-    private time:number = 0
+    private time:number
+    private channel?:VoiceChannel
+    private paused:boolean
 
     constructor(){
         this.queue = []
         this.index = 0
         this.time = 0
+        this.channel = currentVoiceChannel.getChannel
+        this.paused = currentVoiceChannel.getDispatcher?.paused !== undefined? currentVoiceChannel.getDispatcher?.paused : false
     }
+
+    //DataBase
+
+    insertBdChannel = async () => {
+        if(!this.channel) this.setChannel = currentVoiceChannel.getChannel!
+
+        const exists = await MongoFindOne('voiceChannels', { channelId: this.channel!.id }, { channelId: 1 }) as { _id:string, channelId:string }
+        
+        if(exists){
+            this.updateBdChannel()
+            return
+        }
+
+        const Channel:ChannelDetails = {
+            serverId: this.channel!.guild.id,
+            serverName: this.channel!.guild.name,
+            serverIcon: this.channel!.guild.iconURL(),
+            channelId: this.channel!.id,
+            name: this.channel!.name,
+            queue: this.queue,
+            paused: this.paused,
+            index: this.index
+        }
+
+        try {
+
+            await MongoInsertOne('voiceChannels', Channel)
+
+        } catch (error) {
+            console.log(error)
+            SendError('insert BdQueue', error)
+        }
+    }
+
+    updateBdChannel = async () => {
+        if(!this.channel) this.setChannel = currentVoiceChannel.getChannel!
+
+        try {
+            const filter = { channelId: this.channel!.id }
+            const value = { 
+                queue: this.queue,
+                index: this.index,
+                serverName: this.channel!.guild.name,
+                serverIcon: this.channel!.guild.iconURL()
+            }
+    
+            await MongoUpdateOne('voiceChannels', filter, value)
+
+        } catch (error) {
+            console.log(error)
+            SendError('update BdQueue', error)
+        }
+    }
+
+    updateBdIndex = async () => {
+
+        if(!this.channel) this.setChannel = currentVoiceChannel.getChannel!
+
+        try {
+            const filter = { channelId: this.channel!.id }
+            const value = { index: this.index }
+    
+            await MongoUpdateOne('voiceChannels', filter, value)
+    
+        } catch (error) {
+            console.log(error)
+            SendError('update BdIndex', error)
+        }
+    }
+
+    updateBdPaused = async () => {
+
+        if(!this.channel) this.setChannel = currentVoiceChannel.getChannel!
+
+        try {
+            const filter = { channelId: this.channel!.id }
+            const value = { paused: this.paused }
+    
+            await MongoUpdateOne('voiceChannels', filter, value)
+    
+        } catch (error) {
+            console.log(error)
+            SendError('update BdPaused', error)
+        }
+    }
+
+
     //Queue
     set setQueue(queue:iVideo[]) {
         this.queue = queue
+        this.insertBdChannel()
     }
     get getQueue(){
         return this.queue
     }
+
     shuffleQueue(){
         this.queue = this.queue
         .map((a) => ({sort: Math.random(), value: a}))
@@ -103,6 +203,8 @@ class QueueClass {
         .map((a) => {
             return a.value
         })
+        this.index = 0
+        this.insertBdChannel()
     }
 
     //Index
@@ -110,16 +212,22 @@ class QueueClass {
         if(index < this.queue.length && this.queue.length !== 0){
             this.index = index
             this.time = 0
+            this.updateBdIndex()
         }
     }
+
     nextIndex(){
         this.index++
         this.time = 0
+        this.updateBdIndex()
     }
+
     prevIndex(){
         this.index--
         this.time = 0
+        this.updateBdIndex()
     }
+
     get getIndex(){
         return this.index
     }
@@ -128,8 +236,20 @@ class QueueClass {
     set setTime(time:number){
         this.time = time
     }
+
     get getTime(){
         return this.time
+    }
+
+    //ChannelId
+    set setChannel(channel:VoiceChannel){
+        this.channel = channel
+    }
+
+    //paused
+    set setPaused(paused:boolean){
+        this.paused = paused
+        this.updateBdPaused()
     }
 }
 
@@ -154,4 +274,3 @@ class SearchClass {
 export const searchObj = new SearchClass()
 export const config = new ConfigClass()
 export const currentQueue = new QueueClass()
-export const currentVoiceChannel = new VoiceChannelClass()

@@ -34,9 +34,20 @@ interface Ichannels{
 interface User {
     name:string
     nickName:string
+    currentChannel:string
     password:string
     identifier:string
     userId:string
-    currentChannel:string
     token:string
+}
+
+interface ChannelDetails {
+    serverName: string
+    serverId: string
+    serverIcon: string | null
+    channelId: string
+    name: string
+    queue: iVideo[]
+    paused: boolean
+    index: number
 }

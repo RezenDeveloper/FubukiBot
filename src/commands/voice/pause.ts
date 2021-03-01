@@ -17,12 +17,16 @@ export const pause = async (message:Message) => {
     }
     if(voiceChannel && dispatcher && connection){
         if(dispatcher.paused){
+            currentQueue.setPaused = false
+
             channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>")
             message.react(getCheckEmote(message))
             await setStatus(currentQueue.getQueue[currentQueue.getIndex].title, 'LISTENING')
             dispatcher.resume()
         }
         else{
+            currentQueue.setPaused = true
+
             channel.send('<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>')
             message.react(getCheckEmote(message))
             await clearStatus()
