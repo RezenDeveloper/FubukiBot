@@ -1,8 +1,8 @@
 import { Message, TextChannel } from "discord.js";
-import { currentQueue } from '../commandClasses';
 import { FieldsEmbed } from 'discord-paginationembed'
 import { playCurrentMusic } from './playCurrentMusic';
 import { getCheckEmote, getErrorEmote } from "../../utils/utils";
+import { currentQueue } from './../queueClass';
 
 export const queue = (message:Message) => {
 

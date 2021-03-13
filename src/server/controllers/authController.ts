@@ -3,7 +3,7 @@ import { MongoFindOne, MongoInsertOne, MongoUpdateOne } from '../../database/bd'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-import { secret } from '../config/auth.json'
+import { secret } from '../config/auth'
 
 const authRoute = Router()
 
@@ -22,7 +22,7 @@ const generateToken = async ( params:TokenParams ) => {
 }
 
 authRoute.post('/register', async (req, res) => {
-    const { name, identifier, password, userId, nickName } = req.body 
+    const { name, identifier, password, userId, nickName } = req.body
 
     if(Object.values(req.body).length < 5)
         return res.status(400).send({

@@ -15,7 +15,7 @@ interface Icommand {
 interface IcommandVoice extends Icommand {
     needVoice: boolean
 }
-interface iVideo{
+interface VideoApi{
     title:string
     url?:string
     description:string
@@ -26,6 +26,10 @@ interface iVideo{
     isLive:boolean
     status:string
 }
+interface VideoBd extends VideoApi{
+    index?:number
+    _id?:number
+} 
 interface Ichannels{
     name:string
     id:string
@@ -46,8 +50,9 @@ interface ChannelDetails {
     serverId: string
     serverIcon: string | null
     channelId: string
-    name: string
-    queue: iVideo[]
+    channelName: string
+    queue: VideoApi[]
     paused: boolean
+    play: boolean
     index: number
 }

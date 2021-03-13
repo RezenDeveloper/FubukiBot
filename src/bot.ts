@@ -5,6 +5,7 @@ import { useVoiceCommands, searchWaiting } from './commands/useVoiceCommands'
 import { useAdminCommands } from './commands/useAdminCommands'
 import { config, searchObj } from './commands/commandClasses';
 import { handlePixivUrl } from './commands/text/pixivUrl';
+import { MongoFindOne, MongoUpdateOne } from './database/bd'
 
 export const client = new Discord.Client()
 const { TOKEN } = process.env;
@@ -32,9 +33,15 @@ client.on('message', async message => {
     }
 });
 
-client.on('voiceStateUpdate', (oldState, newState) => {
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    const userId = newState.member?.user.id
+    const channelId = newState.channelID
+    const data = await MongoFindOne('users', { userId }, { userId: 1 })
     
-});
+    if(!!data){
+        await MongoUpdateOne('users', { userId }, { currentChannel: channelId ? channelId : '' })
+    }
+})
 
 const TextCommand = async (configData:Iconfig, message:Message) => {
     const { content, channel } = message

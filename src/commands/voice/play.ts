@@ -1,5 +1,5 @@
 import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
-import { currentQueue } from '../commandClasses'
+import { currentQueue } from '../queueClass'
 import { getCheckEmote, getErrorEmote, getPlaylistId, SendError } from '../../utils/utils'
 import { SearchVideo, getVideoInfo, getPlaylist } from '../../utils/api/ytSearch' 
 import ytdl from 'ytdl-core'
@@ -13,7 +13,6 @@ export const play = (message:Message, add?:boolean) => {
 
     const playlistId = getPlaylistId(searchParam)
     const currentQueueArray = currentQueue.getQueue
-    currentQueue.setIndex = 0;
 
     //Is a playlist link
     if(playlistId){
@@ -36,6 +35,7 @@ export const play = (message:Message, add?:boolean) => {
             }
             //Start a new queue with the playlist
             else{
+                currentQueue.setIndex = 0;
                 currentQueue.setQueue = items
                 playCurrentMusic()
             }
@@ -59,6 +59,7 @@ export const play = (message:Message, add?:boolean) => {
             }
             //Start a new queue
             else{
+                currentQueue.setIndex = 0;
                 currentQueue.setQueue = [
                     {
                         ...result,
@@ -92,6 +93,7 @@ export const play = (message:Message, add?:boolean) => {
             }
             //Start a new queue
             else{
+                currentQueue.setIndex = 0;
                 currentQueue.setQueue = result
                 playCurrentMusic()
                 sendTitle(channel, title, "Play")

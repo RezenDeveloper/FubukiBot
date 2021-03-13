@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { getCheckEmote, getErrorEmote } from '../../utils/utils';
-import { currentQueue } from '../commandClasses';
 import { playCurrentMusic } from './playCurrentMusic';
+import { currentQueue } from './../queueClass';
 
 
 export const time = (message:Message) => {

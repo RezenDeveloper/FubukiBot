@@ -2,8 +2,9 @@ import { Message, TextChannel } from 'discord.js';
 import { SearchVideo } from '../../utils/api/ytSearch';
 import { FieldsEmbed } from 'discord-paginationembed'
 import { getNickname, SendError } from './../../utils/utils';
-import { currentQueue, searchObj } from './../commandClasses';
+import { searchObj } from './../commandClasses';
 import { playCurrentMusic } from './playCurrentMusic';
+import { currentQueue } from './../queueClass';
 
 export const search = async (message:Message, waiting?:boolean) => {
 
@@ -48,7 +49,7 @@ export const search = async (message:Message, waiting?:boolean) => {
 
     const search = content.replace(content.split(' ')[0],'');
     
-    SearchVideo(search).then(({ result }) => {
+    SearchVideo(search).then( async ({ result }) => {
         searchObj.setSearchQueue = result
 
         const SearchEmbed = new FieldsEmbed()
@@ -70,9 +71,12 @@ export const search = async (message:Message, waiting?:boolean) => {
         });
         SearchEmbed.setDisabledNavigationEmojis(['delete','jump']);	
         SearchEmbed.setTimeout(0);
-        searchObj.setWaiting = true;
-        channel.send(`What's the number of the sound that you want to play ${nick}? \nYou can choose more than one using commas`);
         SearchEmbed.build()
+        setTimeout(() => {
+            channel.send(`What's the number of the sound that you want to play ${nick}? \nYou can choose more than one using commas`);
+            searchObj.setWaiting = true;
+        },1500)
+        
     }).catch(err => {
         SendError("SearchEmbed",err)
     })

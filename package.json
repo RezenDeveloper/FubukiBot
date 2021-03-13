@@ -4,7 +4,7 @@
     "description": "Fubuki-chan",
     "main": "bot.js",
     "scripts": {
-        "dev": "nodemon src/server/server.ts",
+        "dev": "nodemon src/bot.ts",
         "start": "node dist/bot.js",
         "postinstall": "sucrase ./src -d ./dist --transforms typescript,imports",
         "build": "sucrase ./src -d ./dist --transforms typescript,imports"

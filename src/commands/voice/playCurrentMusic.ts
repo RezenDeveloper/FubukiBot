@@ -1,14 +1,15 @@
 import ytdl, { Filter } from 'ytdl-core'
-import { currentQueue, currentVoiceChannel } from '../commandClasses'
+import { currentVoiceChannel } from '../commandClasses'
 import { URL } from 'url'
+import { currentQueue } from '../queueClass'
 
 export const playCurrentMusic = () => {
     const connection = currentVoiceChannel.getConnection
     const queue = currentQueue.getQueue
-    let index = currentQueue.getIndex
+    const index = currentQueue.getIndex
     let time = currentQueue.getTime.toString()
     let filter:Filter = "audio"
-
+    
     //console.log("index: "+index+" length: "+queue.length)
     //console.log('index++ '+ (index+1))
     
@@ -30,9 +31,9 @@ export const playCurrentMusic = () => {
     currentVoiceChannel.setMusicStatus = title
 
     dispatcher.on('finish',() => {
-        index++
-        if(index < currentQueue.getQueue.length){
-            currentQueue.setIndex = index
+        let newIndex = currentQueue.getIndex+1
+        if(newIndex < currentQueue.getQueue.length){
+            currentQueue.setIndex = newIndex
             playCurrentMusic()
         }
     })

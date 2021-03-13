@@ -3,6 +3,7 @@ import { avatar } from './avatar'
 import { randomFubuki } from './randomFubuki'
 import { d100, d20, getDice } from './dice'
 import { sauce } from './sauce';
+import { app } from './app';
 
 
 export {
@@ -12,5 +13,6 @@ export {
     d100,
     d20,
     getDice,
-    sauce
+    sauce,
+    app
 }

@@ -1,8 +1,8 @@
-import { currentQueue } from '../commandClasses';
 import { playCurrentMusic } from './playCurrentMusic';
 import { Message } from 'discord.js';
 import { getNickname, getErrorEmote, getCheckEmote } from './../../utils/utils';
 import { currentVoiceChannel } from './../commandClasses';
+import { currentQueue } from './../queueClass';
 
 export const prev = async (message:Message) => {
     const index = currentQueue.getIndex

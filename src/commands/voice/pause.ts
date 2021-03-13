@@ -1,6 +1,7 @@
 import { Message } from "discord.js";
 import { clearStatus, getCheckEmote, setStatus } from "../../utils/utils";
-import { currentQueue, currentVoiceChannel } from '../commandClasses'
+import { currentVoiceChannel } from '../commandClasses'
+import { currentQueue } from "../queueClass";
 import { getErrorEmote } from './../../utils/utils';
 
 export const pause = async (message:Message) => {

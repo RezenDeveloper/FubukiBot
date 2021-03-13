@@ -57,12 +57,12 @@ export const getPlaylistItems = (id:string, next?:string, prevPlaylist?:boolean)
         }
     })
     .then(async ({ data }) => {
-        let playlist:iVideo[] = await data.items.map(async (value:PlaylistItem) => {
+        let playlist:VideoApi[] = await data.items.map(async (value:PlaylistItem) => {
 
             const id:string = value.snippet.resourceId.videoId
             const url = `https://www.youtube.com/watch?v=${id}`
             
-            let items:iVideo = {
+            let items:VideoApi = {
                 ...await getVideoInfo(id),
                 url
             };
@@ -77,7 +77,7 @@ export const getPlaylistItems = (id:string, next?:string, prevPlaylist?:boolean)
         }
         else if (prevPlaylist && data.nextPageToken !== undefined) {
             //console.log('middle')
-            const nextPlaylist:iVideo[] = await getPlaylistItems(id, data.nextPageToken, true)
+            const nextPlaylist:VideoApi[] = await getPlaylistItems(id, data.nextPageToken, true)
             playlist = playlist.concat(nextPlaylist)
             return Promise.all(playlist)
         }
@@ -88,7 +88,7 @@ export const getPlaylistItems = (id:string, next?:string, prevPlaylist?:boolean)
     })
 }
 
-export const getVideoInfo = (id:string):Promise<iVideo> => {
+export const getVideoInfo = (id:string):Promise<VideoApi> => {
     return axios.get(`https://youtube.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,status&id=${id}&key=${key}`).then(({data}:iVideoInfoApi) => {
         const {contentDetails,snippet,status} = data.items[0]
         const {title, description, publishedAt, channelTitle, liveBroadcastContent, thumbnails} = snippet
@@ -141,7 +141,7 @@ export const SearchVideo = async (query:string, limit?:number, next?:string) => 
     return axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=id&maxResults=${limit}&q=${query}&pageToken=${next}&type=video&key=${key}`).then(async({data}:iSearchVideo) => {
         const { nextPageToken } = data
 
-        let result:Promise<iVideo>[] = data.items.map(async ({ id: apiId }) => {
+        let result:Promise<VideoApi>[] = data.items.map(async ({ id: apiId }) => {
             const id = apiId.videoId
             const url = `https://www.youtube.com/watch?v=${id}`
 

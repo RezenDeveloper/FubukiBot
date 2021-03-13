@@ -1,11 +1,9 @@
 import { Message } from 'discord.js';
 import { getCheckEmote } from '../../utils/utils';
-import { currentQueue, currentVoiceChannel } from '../commandClasses';
+import { currentQueue } from '../queueClass';
 
 export const clear = (message:Message) => {
     
-    currentQueue.setIndex = 0
-    currentQueue.setQueue = []
-    currentVoiceChannel.endDispatcher()
+    currentQueue.clearQueue()
     message.react(getCheckEmote(message))
 }

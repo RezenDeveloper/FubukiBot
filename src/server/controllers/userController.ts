@@ -6,19 +6,18 @@ const getRoute = Router()
 getRoute.get('/channel', async (req, res) => {
     const { userId } = req
     
-    const { currentChannel } = await MongoFindOne('users', { userId }, { currentChannel: 1 }) as { _id:string, currentChannel:string }
-
+    const { currentChannel }  = await MongoFindOne('users', { userId }, { currentChannel: 1 }) as { _id:string, currentChannel:string }
+    
     res.status(200).send({ currentChannel })
 })
 
-getRoute.get('/queue', async (req, res) => {
+getRoute.get('/channelDetails', async (req, res) => {
     const { channelId } = req.query
-
-    if(!channelId) return res.send({ error: 'No channelId provided' })
+    if(!channelId) return res.status(404).send({ error: 'No channelId provided' })
     
     try {
-        const queue = await MongoFindOne('voiceChannels', { channelId })
-        return res.status(200).send({ queue })
+        const channelDetails = await MongoFindOne('voiceChannels', { channelId })
+        return res.status(200).send({ channelDetails })
 
     } catch (error) {
         return res.status(404).send({

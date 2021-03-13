@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
-import { currentQueue } from '../commandClasses';
 import { getCheckEmote, getErrorEmote, getNickname } from './../../utils/utils';
 import { playCurrentMusic } from './playCurrentMusic';
+import { currentQueue } from './../queueClass';
 
 export const shuffle = async (message:Message) => {
     const { channel, author } = message

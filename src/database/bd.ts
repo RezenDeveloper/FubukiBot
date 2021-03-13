@@ -58,14 +58,18 @@ export const MongoInsertOne = (collectionName:string, value:Object) => {
     })
 }
 
-export const MongoUpdateOne = (collectionName:string, filter:Object, value:Object) => {
+export const MongoUpdateOne = (collectionName:string, filter:Object, value:Object, inc:boolean = false) => {
     return new Promise( (resolve:TresolveOne, reject:Treject) => {
         MongoClient.connect(DATABASE_URL!, { useUnifiedTopology: true }, (err, client) => {
             if(err) reject(err)
 
             const collection = client.db(DATABASE_NAME).collection(collectionName);
-
-            collection.updateOne(filter, { $set:value }).then((value) => {
+            
+            let update:Object = { $set: value }
+            if(inc) update = { "$inc": value }
+            
+            
+            collection.updateOne(filter, update).then((value) => {
                 resolve(value)
             })
             .catch(err => {
@@ -74,12 +78,41 @@ export const MongoUpdateOne = (collectionName:string, filter:Object, value:Objec
             .finally(() => {
                 client.close();
             })
-
         });
     })
 }
 
-type TresolveWatch = (event:ChangeStream) => void
+interface Sort {
+    $each: any[]
+    $sort: Object
+}
+
+export const MongoSort = (collectionName:string, filter:Object, array:string, sort:Sort) => {
+    return new Promise( (resolve:TresolveOne, reject:Treject) => {
+        MongoClient.connect(DATABASE_URL!, { useUnifiedTopology: true }, (err, client) => {
+            if(err) reject(err)
+
+            const collection = client.db(DATABASE_NAME).collection(collectionName);
+            
+            const update = { $push: { [array]:sort} }
+
+            collection.updateMany(filter, update).then((value) => {
+                resolve(value)
+            })
+            .catch(err => {
+                reject(err)
+            })
+            .finally(() => {
+                client.close();
+            })
+        });
+    })
+}
+interface WatchData {
+    watch:ChangeStream
+    client:MongoClient
+}
+type TresolveWatch = (watchData:WatchData) => void
 
 export const MongoWatch = (collectionName:string, filter:Object) => {
     return new Promise( (resolve:TresolveWatch, reject:Treject) => {
@@ -92,7 +125,10 @@ export const MongoWatch = (collectionName:string, filter:Object) => {
 
             const watch = collection.watch(pipeline, { 'fullDocument': 'updateLookup' })
 
-            resolve(watch)
+            resolve({
+                watch,
+                client
+            })
         });
     })
 }

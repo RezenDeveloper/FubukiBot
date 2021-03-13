@@ -17,25 +17,32 @@ watchRoute.get('/user', async (req, res) => {
 
     res.writeHead(200, Headers)
     
-    const event = await MongoWatch('users', { 'fullDocument.userId': userId })
-    
-    console.log('defined')
+    const { watch, client } = await MongoWatch('users', { 'fullDocument.userId': userId })
 
-    event.on('change', (ev:any) => {
-        const user = ev.fullDocument as User
+    watch.on('change', (data:any) => {
+        const { updatedFields } = data.updateDescription
 
         res.write('event: message\n')
         res.write(`data: ${JSON.stringify({
-            currentChannel: user.currentChannel,
-            nickName: user.nickName
+            updatedFields
         })}\n\n`)
     })
 
     req.on('close', () => {
-        event.removeAllListeners("change")
+        watch.removeAllListeners("change")
+        watch.close()
+        client.close()
+    })
+    req.on('error', (error) => {
+        console.log(error)
+        watch.removeAllListeners("change")
+        watch.close()
+        client.close()
     })
     req.on('end', () => {
-        event.removeAllListeners("change")
+        watch.removeAllListeners("change")
+        watch.close()
+        client.close()
     })
 })
 
@@ -49,24 +56,32 @@ watchRoute.get('/channel', async (req, res) => {
 
     res.writeHead(200, Headers)
     
-    const event = await MongoWatch('voiceChannels', { 'fullDocument.channelId': currentChannel })
-    
-    console.log('defined voice')
+    const { watch, client } = await MongoWatch('voiceChannels', { 'fullDocument.channelId': currentChannel })
 
-    event.on('change', (ev:any) => {
-        const channel = ev.fullDocument as ChannelDetails
+    watch.on('change', (data:any) => {
+        const { updatedFields } = data.updateDescription
 
         res.write('event: message\n')
         res.write(`data: ${JSON.stringify({
-            channel
+            updatedFields
         })}\n\n`)
     })
 
     req.on('close', () => {
-        event.removeAllListeners("change")
+        watch.removeAllListeners("change")
+        watch.close()
+        client.close()
+    })
+    req.on('error', (error) => {
+        console.log(error)
+        watch.removeAllListeners("change")
+        watch.close()
+        client.close()
     })
     req.on('end', () => {
-        event.removeAllListeners("change")
+        watch.removeAllListeners("change")
+        watch.close()
+        client.close()
     })
 })
 
