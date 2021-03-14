@@ -7,7 +7,7 @@ export const app = async (message:Message) => {
     const password = getPassword()
 
     try {
-        await axios.post('http://127.0.0.1:8080/api/auth/register', {
+        await axios.post('https://fubuki-server.herokuapp.com/api/auth/register', {
             name:author.username,
             nickName: '',
             password,
