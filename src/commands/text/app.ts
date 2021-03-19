@@ -8,11 +8,12 @@ export const app = async (message:Message) => {
 
     try {
         await axios.post('https://fubuki-server.herokuapp.com/api/auth/register', {
-            name:author.username,
+            name: author.username,
             nickName: '',
             password,
             identifier: author.discriminator,
-            userId: author.id
+            userId: author.id,
+            secret: process.env.SERVER_SECRET
         })
         author.send(`Your password is ${password}`)
     } catch (error) {
