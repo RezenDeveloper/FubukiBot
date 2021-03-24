@@ -1,10 +1,12 @@
 import { Message, VoiceChannel } from 'discord.js'
 import { getNickname } from '../utils/utils'
 import { play, pause, queue, playDirection, shuffle, time, search, clear, leave } from './voice/getVoiceCommands'
-import { currentVoiceChannel } from '././commandClasses'
+import { getCurrentQueue } from '././queueClass'
+import type { QueueClass } from '././queueClass'
 
 export const searchWaiting = async (message: Message) => {
-    if(message.author.id !== '708065683971506186') await search(message,true)
+    const currentQueue = getCurrentQueue(message.guild!.id)
+    if(message.author.id !== '708065683971506186') await search(message, currentQueue, true)
 }
 
 export const useVoiceCommands = async (message: Message, commandObj?:IcommandVoice) => {
@@ -12,68 +14,66 @@ export const useVoiceCommands = async (message: Message, commandObj?:IcommandVoi
 
     const { commands, needVoice } = commandObj!
     const memberChannel = member?.voice.channel
+    const currentQueue = getCurrentQueue(message.guild!.id)
 
-    if(!await isOnChannel(memberChannel, needVoice)){        
+    if(!await isOnChannel(memberChannel, needVoice, currentQueue)){        
         channel.send(`Please join a voice channel first ${await getNickname(author)}!`)
         return
     }
 
     switch (commands[0]){
         case 'play':
-            play(message)
+            play(message, currentQueue)
             break
         case 'add':
-            play(message, true)
+            play(message, currentQueue, true)
             break
         case 'queue':
-            queue(message)
+            queue(message, currentQueue)
             break
         case 'next':
-            await playDirection.next(message)
+            await playDirection.next(message, currentQueue)
             break
         case 'previous':
-            await playDirection.prev(message)
+            await playDirection.prev(message, currentQueue)
             break
         case 'pause':
-            await pause(message)
+            await pause(message, currentQueue)
             break
         case 'shuffle':
-            await shuffle(message)
+            await shuffle(message, currentQueue)
             break
         case 'time':
-            time(message)
+            time(message, currentQueue)
             break
         case 'search':
-            await search(message)
+            await search(message, currentQueue)
             break
         case 'clear':
-            clear(message)
+            clear(message, currentQueue)
             break
         case 'leave':
-            leave(message)
+            leave(message, currentQueue)
             break
     }
 }
 
-const isOnChannel = (memberChannel:VoiceChannel | null | undefined, needVoice:boolean) => {
+const isOnChannel = (memberChannel:VoiceChannel | null | undefined, needVoice:boolean, currentQueue:QueueClass) => {
     return new Promise( async (resolve:(res:boolean) => void) => {
-        if(currentVoiceChannel.getChannel && !needVoice){
-            resolve(true)
+        if(currentQueue.getChannel && !needVoice){
+            return resolve(true)
         }
-        else if(memberChannel){ 
-            if(currentVoiceChannel.getChannel !== memberChannel && needVoice){
-                memberChannel.join().then(connection => {
-                    currentVoiceChannel.setChannel = memberChannel
-                    currentVoiceChannel.setConnection = connection
-                    resolve(true)
-                })
-            }
-            else{
+        if(!memberChannel) return resolve(false)
+
+        if(currentQueue.getChannel !== memberChannel && needVoice){
+            memberChannel.join().then(connection => {
+                currentQueue.setChannel = memberChannel
+                currentQueue.setConnection = connection
                 resolve(true)
-            }
+            })
         }
         else{
-            resolve(false)
+            resolve(true)
         }
     })
 }

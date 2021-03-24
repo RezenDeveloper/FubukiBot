@@ -2,9 +2,9 @@ import { Message, TextChannel } from "discord.js";
 import { FieldsEmbed } from 'discord-paginationembed'
 import { playCurrentMusic } from './playCurrentMusic';
 import { getCheckEmote, getErrorEmote } from "../../utils/utils";
-import { currentQueue } from './../queueClass';
+import type { QueueClass } from '../queueClass';
 
-export const queue = (message:Message) => {
+export const queue = (message:Message, currentQueue:QueueClass) => {
 
     const { channel, content } = message
     const currentQueueArray = currentQueue.getQueue
@@ -39,7 +39,7 @@ export const queue = (message:Message) => {
     else{
         if(number <= currentQueueArray.length && number > 0){
             currentQueue.setIndex = (number-1)
-            playCurrentMusic()
+            playCurrentMusic(currentQueue)
             message.react(getCheckEmote(message))
         }
         else{

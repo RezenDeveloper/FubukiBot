@@ -1,10 +1,9 @@
 import { playCurrentMusic } from './playCurrentMusic';
 import { Message } from 'discord.js';
 import { getNickname, getErrorEmote, getCheckEmote } from './../../utils/utils';
-import { currentVoiceChannel } from './../commandClasses';
-import { currentQueue } from './../queueClass';
+import type { QueueClass } from '../queueClass';
 
-export const prev = async (message:Message) => {
+export const prev = async (message:Message, currentQueue:QueueClass) => {
     const index = currentQueue.getIndex
     const lenght = currentQueue.getQueue.length
     const { channel, author } = message
@@ -17,11 +16,11 @@ export const prev = async (message:Message) => {
     }
     if(index > 0){
         currentQueue.prevIndex()
-        playCurrentMusic()
+        playCurrentMusic(currentQueue)
         message.react(getCheckEmote(message))
     }
-    else if ( currentVoiceChannel.getDispatcherStatus === 'ended' ){
-        playCurrentMusic()
+    else if ( currentQueue.getDispatcherStatus === 'ended' ){
+        playCurrentMusic(currentQueue)
         message.react(getCheckEmote(message))
     }
     else{
@@ -30,7 +29,7 @@ export const prev = async (message:Message) => {
     }
 }
 
-export const next = async (message:Message) => {
+export const next = async (message:Message, currentQueue:QueueClass) => {
     const index = currentQueue.getIndex
     const lenght = currentQueue.getQueue.length
     const { channel, author } = message
@@ -44,7 +43,7 @@ export const next = async (message:Message) => {
     if((index+1) < lenght){
         currentQueue.nextIndex()
         message.react(getCheckEmote(message))
-        playCurrentMusic()
+        playCurrentMusic(currentQueue)
     }
     else{
         channel.send(`This is the last song ${name}!`)

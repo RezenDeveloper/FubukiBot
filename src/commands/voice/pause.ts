@@ -1,17 +1,16 @@
 import { Message } from "discord.js";
 import { clearStatus, getCheckEmote, setStatus } from "../../utils/utils";
-import { currentVoiceChannel } from '../commandClasses'
-import { currentQueue } from "../queueClass";
+import type { QueueClass } from '../queueClass';
 import { getErrorEmote } from './../../utils/utils';
 
-export const pause = async (message:Message) => {
+export const pause = async (message:Message, currentQueue:QueueClass) => {
 
     const { channel } = message
-    const voiceChannel = currentVoiceChannel.getChannel
-    const dispatcher = currentVoiceChannel.getDispatcher
-    const connection = currentVoiceChannel.getConnection
+    const voiceChannel = currentQueue.getChannel
+    const dispatcher = currentQueue.getDispatcher
+    const connection = currentQueue.getConnection
 
-    if(currentVoiceChannel.getDispatcherStatus === "ended"){
+    if(currentQueue.getDispatcherStatus === "ended"){
         channel.send('This music is already over!')
         message.react(getErrorEmote())
         return

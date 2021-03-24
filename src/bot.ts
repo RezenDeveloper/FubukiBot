@@ -1,4 +1,4 @@
-import Discord, {Message} from 'discord.js'
+import Discord, { Message } from 'discord.js'
 import { getNickname, hasCommands } from './utils/utils'
 import { useTextCommands } from './commands/useTextCommands'
 import { useVoiceCommands, searchWaiting } from './commands/useVoiceCommands'
@@ -7,10 +7,8 @@ import { config, searchObj } from './commands/commandClasses';
 import { handlePixivUrl } from './commands/text/pixivUrl';
 import { MongoFindOne, MongoUpdateOne } from './database/bd'
 
-export const client = new Discord.Client()
 const { TOKEN } = process.env;
-
-client.login(TOKEN);
+export const client = new Discord.Client()
 
 client.once('ready', async () => {
     console.log('Ready!')
@@ -42,6 +40,8 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         await MongoUpdateOne('users', { userId }, { currentChannel: channelId ? channelId : '' })
     }
 })
+
+client.login(TOKEN)
 
 const TextCommand = async (configData:Iconfig, message:Message) => {
     const { content, channel } = message

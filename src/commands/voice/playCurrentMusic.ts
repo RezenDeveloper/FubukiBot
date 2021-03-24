@@ -1,10 +1,9 @@
 import ytdl, { Filter } from 'ytdl-core'
-import { currentVoiceChannel } from '../commandClasses'
 import { URL } from 'url'
-import { currentQueue } from '../queueClass'
+import type { QueueClass } from '../queueClass';
 
-export const playCurrentMusic = () => {
-    const connection = currentVoiceChannel.getConnection
+export const playCurrentMusic = (currentQueue:QueueClass) => {
+    const connection = currentQueue.getConnection
     const queue = currentQueue.getQueue
     const index = currentQueue.getIndex
     let time = currentQueue.getTime.toString()
@@ -27,14 +26,14 @@ export const playCurrentMusic = () => {
     
     const stream = ytdl(videoUrl, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
     const dispatcher = connection.play(stream)
-    currentVoiceChannel.setDispatcher = dispatcher
-    currentVoiceChannel.setMusicStatus = title
+    currentQueue.setDispatcher = dispatcher
+    currentQueue.setMusicStatus = title
 
     dispatcher.on('finish',() => {
         let newIndex = currentQueue.getIndex+1
         if(newIndex < currentQueue.getQueue.length){
             currentQueue.setIndex = newIndex
-            playCurrentMusic()
+            playCurrentMusic(currentQueue)
         }
     })
 

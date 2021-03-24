@@ -2,11 +2,13 @@ import { VoiceChannel } from "discord.js";
 import { ChangeStream } from "mongodb";
 import { MongoFindOne, MongoInsertOne, MongoUpdateOne, MongoWatch } from "../database/bd";
 import { SendError } from "../utils/utils";
-import { currentVoiceChannel } from "./commandClasses";
+import { VoiceChannelClass } from "./commandClasses";
 import { playCurrentMusic } from './voice/playCurrentMusic';
 
+const classArray:QueueClass[] = []
+const serverIdArray:string[] = []
 
-class QueueClass{
+export class QueueClass extends VoiceChannelClass{
     private queue:VideoBd[]
     private index:number
     private time:number
@@ -16,19 +18,19 @@ class QueueClass{
     private watchEvent?:ChangeStream<any>
 
     constructor() {
+        super();
         this.queue = []
         this.index = 0
         this.time = 0
-        this.paused = currentVoiceChannel.getDispatcher?.paused !== undefined? currentVoiceChannel.getDispatcher?.paused : false
+        this.paused = super.getDispatcher?.paused !== undefined? super.getDispatcher?.paused : false
     }
 
     //DataBase
 
     watchChannel = async () => {
-        this.updateChannel()
-        this.eventChannel = this.currentChannel
+        this.eventChannel = super.getChannel
 
-        const serverId = this.currentChannel!.guild.id
+        const serverId = super.getChannel!.guild.id
 
         const { watch, client } = await MongoWatch('voiceChannels', { 'fullDocument.serverId': serverId })
         this.watchEvent = watch
@@ -44,10 +46,10 @@ class QueueClass{
                 this.index = bdIndex
                 //console.log('new BdIndex',bdIndex)
                 if(!fullDocument.play) return
-                playCurrentMusic()
+                playCurrentMusic(this)
             }
             if(bdPaused !== undefined && bdPaused !== this.paused) {
-                const dispatcher = currentVoiceChannel.getDispatcher
+                const dispatcher = super.getDispatcher
                 if(dispatcher !== undefined){
                     if(bdPaused)
                         dispatcher.pause()
@@ -80,9 +82,8 @@ class QueueClass{
     }
 
     insertBdChannel = async () => {
-        this.updateChannel()
         
-        const exists = await MongoFindOne('voiceChannels', { serverId: this.currentChannel!.guild.id }, { serverId: 1 }) as { _id:string, serverId:string }
+        const exists = await MongoFindOne('voiceChannels', { serverId: super.getChannel!.guild.id }, { serverId: 1 }) as { _id:string, serverId:string }
         
         if(exists){
             this.updateBdChannel()
@@ -94,11 +95,11 @@ class QueueClass{
         })
 
         const Channel:ChannelDetails = {
-            serverId: this.currentChannel!.guild.id,
-            serverName: this.currentChannel!.guild.name,
-            serverIcon: this.currentChannel!.guild.iconURL(),
-            channelId: this.currentChannel!.id,
-            channelName: this.currentChannel!.name,
+            serverId: super.getChannel!.guild.id,
+            serverName: super.getChannel!.guild.name,
+            serverIcon: super.getChannel!.guild.iconURL(),
+            channelId: super.getChannel!.id,
+            channelName: super.getChannel!.name,
             queue: newQueue,
             paused: false,
             play: true,
@@ -116,7 +117,6 @@ class QueueClass{
     }
 
     updateBdChannel = async () => {
-        this.updateChannel()
 
         try {
             const newQueue = this.queue.map((value, i,) => {
@@ -126,12 +126,12 @@ class QueueClass{
                     _id: value._id ? value._id : i 
                 }
             })
-            const filter = { serverId: this.currentChannel!.guild.id }
+            const filter = { serverId: super.getChannel!.guild.id }
             const value = { 
-                serverIcon: this.currentChannel!.guild.iconURL(),
-                serverName: this.currentChannel!.guild.name,
-                channelName: this.currentChannel!.name,
-                channelId: this.currentChannel!.id,
+                serverIcon: super.getChannel!.guild.iconURL(),
+                serverName: super.getChannel!.guild.name,
+                channelName: super.getChannel!.name,
+                channelId: super.getChannel!.id,
                 queue: newQueue,
                 index: this.index,
                 play: true,
@@ -146,10 +146,9 @@ class QueueClass{
     }
 
     updateBdIndex = async () => {
-        this.updateChannel()
 
         try {
-            const filter = { serverId: this.currentChannel!.guild.id }
+            const filter = { serverId: super.getChannel!.guild.id }
             const value = { index: this.index, play: true }
     
             await MongoUpdateOne('voiceChannels', filter, value)
@@ -161,10 +160,9 @@ class QueueClass{
     }
 
     updateBdPaused = async () => {
-        this.updateChannel()
 
         try {
-            const filter = { serverId: this.currentChannel!.guild.id }
+            const filter = { serverId: super.getChannel!.guild.id }
             const value = { paused: this.paused }
     
             await MongoUpdateOne('voiceChannels', filter, value)
@@ -180,9 +178,7 @@ class QueueClass{
     set setQueue(queue:VideoBd[]) {
         this.queue = queue
 
-        if(!this.currentChannel) this.updateChannel()
-
-        if(this.eventChannel === this.currentChannel && this.watchEvent !== undefined){
+        if(this.eventChannel === super.getChannel && this.watchEvent !== undefined){
             //Remove events if the queue is from the same channel
             
             this.watchEvent.removeAllListeners("change")
@@ -212,8 +208,8 @@ class QueueClass{
         this.setIndex = 0
         this.setQueue = []
         this.setPaused = false
-        if(currentVoiceChannel !== undefined){
-            currentVoiceChannel.endDispatcher()
+        if(super.getDispatcher !== undefined){
+            super.endDispatcher()
         }
     }
 
@@ -251,11 +247,6 @@ class QueueClass{
         return this.time
     }
 
-    //Channel
-    updateChannel(){
-        this.currentChannel = currentVoiceChannel.getChannel
-    }
-
     //paused
     set setPaused(paused:boolean){
         this.paused = paused
@@ -263,4 +254,13 @@ class QueueClass{
     }
 }
 
-export const currentQueue = new QueueClass()
+export const getCurrentQueue = (serverId:string) => {
+    const index = serverIdArray.indexOf(serverId)
+    
+    if(index !== -1 ) return classArray[index]
+    const currentQueue = new QueueClass()
+
+    serverIdArray.push(serverId)
+    classArray.push(currentQueue)
+    return currentQueue
+}

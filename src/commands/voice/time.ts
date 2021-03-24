@@ -1,10 +1,10 @@
 import { Message } from 'discord.js';
 import { getCheckEmote, getErrorEmote } from '../../utils/utils';
 import { playCurrentMusic } from './playCurrentMusic';
-import { currentQueue } from './../queueClass';
+import type { QueueClass } from '../queueClass';
 
 
-export const time = (message:Message) => {
+export const time = (message:Message, currentQueue:QueueClass) => {
     const { content, channel } = message
     const time = content.split(' ')[1]
     const template = new RegExp(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)
@@ -19,7 +19,7 @@ export const time = (message:Message) => {
         const total = parseFloat(seconds) + parseFloat(minutes)*60 + parseFloat(hours)*60*60
         currentQueue.setTime = total
         channel.send("May not work to some videos, not my fault!");
-        playCurrentMusic()
+        playCurrentMusic(currentQueue)
         message.react(getCheckEmote(message))
     }
     else{

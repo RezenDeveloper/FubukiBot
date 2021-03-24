@@ -3,7 +3,7 @@ import { MongoUpdateOne } from "../database/bd";
 import { clearStatus, SendError, setStatus } from "../utils/utils"
 import { getDBConfig } from './../utils/utils';
 
-class VoiceChannelClass {
+export class VoiceChannelClass {
     private channel?:VoiceChannel
     private musicStatus?:string
     private connection?:VoiceConnection
@@ -54,14 +54,16 @@ class VoiceChannelClass {
     set setMusicStatus(status:string){
         this.musicStatus = status
     }
-    listenConnection(){
+
+    //Listeners
+    private listenConnection(){
         this.connection!.on("disconnect", () => {
             this.dispatcherStatus = 'ended'
             this.channel = undefined
             this.connection = undefined
         })
     }
-    listenDispatcher(){
+    private listenDispatcher(){
         this.dispatcher!.on("start", async () => {
             await setStatus(this.musicStatus!, 'LISTENING')
             this.dispatcherStatus = 'running'
@@ -77,7 +79,6 @@ class VoiceChannelClass {
         })
     }
 }
-
 class ConfigClass {
     private config = getDBConfig()
 
@@ -105,4 +106,3 @@ class SearchClass {
 
 export const searchObj = new SearchClass()
 export const config = new ConfigClass()
-export const currentVoiceChannel = new VoiceChannelClass()
