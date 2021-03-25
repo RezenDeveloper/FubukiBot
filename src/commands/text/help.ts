@@ -1,11 +1,11 @@
 import Discord, { Message } from 'discord.js'
-import { config } from '../commandClasses'
+import { getDBConfig } from '../../utils/utils'
 
 export const help = async (message:Message) => {
     const { channel } = message
-    const { prefix, voiceCommands, textCommands } = await config.getConfig
+    const { prefix, voiceCommands, textCommands } = await getDBConfig();
 
-    const chatValues = textCommands.map(({description, name}) => {
+    const chatValues = textCommands.filter((value => !value.isHidden)).map(({description, name}) => {
         return `**${prefix}${name}** - ${description}\n`
     }).join('')
     const voiceValues = voiceCommands.map(({description, name}) => {
