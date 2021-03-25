@@ -1,7 +1,6 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
 import { MongoUpdateOne } from "../database/bd";
 import { SendError } from "../utils/utils"
-import { getDBConfig } from './../utils/utils';
 
 export class VoiceChannelClass {
     private channel?:VoiceChannel
@@ -65,7 +64,6 @@ export class VoiceChannelClass {
     }
     leaveIn(seconds:number){
         this.leaveTimeout = setTimeout(() => {
-            console.log('leaving')
             this.endConnection()
         },seconds*1000)
     }
@@ -96,13 +94,6 @@ export class VoiceChannelClass {
         })
     }
 }
-class ConfigClass {
-    private config = getDBConfig()
-
-    get getConfig(){
-        return this.config
-    }
-}
 class SearchClass {
     private queue:VideoBd[] = []
     private waiting:boolean = false
@@ -122,4 +113,3 @@ class SearchClass {
 }
 
 export const searchObj = new SearchClass()
-export const config = new ConfigClass()

@@ -1,15 +1,38 @@
 import { Message, VoiceChannel } from 'discord.js'
-import { getNickname } from '../utils/utils'
+import { getDBConfig, getNickname, hasCommands } from '../utils/utils'
 import { play, pause, queue, playDirection, shuffle, time, search, clear, leave } from './voice/getVoiceCommands'
-import { getCurrentQueue } from '././queueClass'
-import type { QueueClass } from '././queueClass'
+import { getCurrentQueue } from './queueClass'
+import type { QueueClass } from './queueClass'
 
 export const searchWaiting = async (message: Message) => {
     const currentQueue = getCurrentQueue(message.guild!.id)
     if(message.author.id !== '708065683971506186') await search(message, currentQueue, true)
 }
 
-export const useVoiceCommands = async (message: Message, commandObj?:IcommandVoice) => {
+export const isVoiceCommand = async (message:Message) => {
+    const configData = await getDBConfig()
+    const { content, channel, author } = message
+    const { prefix, voiceCommands } = configData
+    let errorMessage = false
+    
+    const command = hasCommands(voiceCommands, content, prefix, (message) => { 
+        channel.send(message)
+        errorMessage = true
+    })
+    if(command && channel.type === "text") {
+        await handleVoiceCommands(message, command as IcommandVoice)
+        return true
+    }
+    else if(command && channel.type !== "text") {
+        channel.send(`Sorry ${await getNickname(author)}, i can't do that on this channel.`)
+        return true
+    }
+    else if (errorMessage){
+        return true
+    }
+}
+
+const handleVoiceCommands = async (message: Message, commandObj?:IcommandVoice) => {
     const { channel, author, member } = message
 
     const { commands, needVoice } = commandObj!
