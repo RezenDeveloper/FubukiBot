@@ -1,11 +1,10 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
 import { MongoUpdateOne } from "../database/bd";
-import { clearStatus, SendError, setStatus } from "../utils/utils"
+import { SendError } from "../utils/utils"
 import { getDBConfig } from './../utils/utils';
 
 export class VoiceChannelClass {
     private channel?:VoiceChannel
-    private musicStatus?:string
     private connection?:VoiceConnection
     private dispatcher?:StreamDispatcher
     private dispatcherStatus:'running'|'ended' = "running"
@@ -51,9 +50,6 @@ export class VoiceChannelClass {
     get getChannel(){
         return this.channel
     }
-    set setMusicStatus(status:string){
-        this.musicStatus = status
-    }
 
     //Listeners
     private listenConnection(){
@@ -65,16 +61,13 @@ export class VoiceChannelClass {
     }
     private listenDispatcher(){
         this.dispatcher!.on("start", async () => {
-            await setStatus(this.musicStatus!, 'LISTENING')
             this.dispatcherStatus = 'running'
         })
         this.dispatcher!.on('error', async (err) => { 
             SendError("Dispatcher",err)
-            await clearStatus()
             this.dispatcherStatus = 'ended'
         })
-        this.dispatcher!.on('close', async () => { 
-            await clearStatus()
+        this.dispatcher!.on('close', async () => {
             this.dispatcherStatus = 'ended'
         })
     }

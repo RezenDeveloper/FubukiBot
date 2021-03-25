@@ -29,7 +29,7 @@ export const play = (message:Message, currentQueue:QueueClass, add?:boolean) => 
             //Start a new queue with the playlist
             else{
                 const indexParam = new URL(searchParam).searchParams.get('index')
-                const index = indexParam ? parseFloat(indexParam) : 0
+                const index = indexParam ? parseFloat(indexParam) : 1
 
                 currentQueue.setQueue = items
                 currentQueue.setIndex = index-1

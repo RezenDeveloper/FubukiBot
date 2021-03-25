@@ -12,7 +12,7 @@ export const shuffle = async (message:Message, currentQueue:QueueClass) => {
         return
     }
     if(length === 1){
-        channel.send(`You know i need two sounds to shuffle right?`)
+        channel.send(`You know i need at least two sounds to shuffle right?`)
         message.react(getErrorEmote())
         return
     }

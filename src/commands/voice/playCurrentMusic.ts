@@ -27,7 +27,6 @@ export const playCurrentMusic = (currentQueue:QueueClass) => {
     const stream = ytdl(videoUrl, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
     const dispatcher = connection.play(stream)
     currentQueue.setDispatcher = dispatcher
-    currentQueue.setMusicStatus = title
 
     dispatcher.on('finish',() => {
         let newIndex = currentQueue.getIndex+1

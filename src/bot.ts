@@ -100,11 +100,11 @@ const AdminCommand = async (configData:Iconfig, message:Message, adminArray:stri
         channel.send(message)
         errorMessage = true
     })
+    if(errorMessage) return true
+
     if(command){
         await useAdminCommands(message, command as Icommand)
         return true
     }
-    else if (errorMessage){
-        return true
-    }
+    return false
 }
