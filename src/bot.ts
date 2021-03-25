@@ -6,6 +6,7 @@ import { useAdminCommands } from './commands/useAdminCommands'
 import { config, searchObj } from './commands/commandClasses';
 import { handlePixivUrl } from './commands/text/pixivUrl';
 import { MongoFindOne, MongoUpdateOne } from './database/bd'
+import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
 
 const { TOKEN } = process.env;
 export const client = new Discord.Client()
@@ -32,12 +33,28 @@ client.on('message', async message => {
 });
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
+    const serverId = oldState.guild.id || newState.guild.id
+    const currentQueue = getCurrentQueue(serverId)
+    
     const userId = newState.member?.user.id
     const channelId = newState.channelID
     const data = await MongoFindOne('users', { userId }, { userId: 1 })
-    
     if(!!data){
         await MongoUpdateOne('users', { userId }, { currentChannel: channelId ? channelId : '' })
+    }
+    
+    if(currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === channelId) {
+        currentQueue.clearLeaveTimeout()
+    }
+    
+    if(currentQueue.getChannel && !currentQueue.getLeaveTimeout){
+        const members = currentQueue.getChannel.members.map(value => value.user.id)
+        if(!members.length) return
+        
+        if(members[0] === (await config.getConfig).botId){
+            currentQueue.leaveIn(5)
+            updateCurrentQueue(serverId, currentQueue)
+        }
     }
 })
 

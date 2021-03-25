@@ -13,7 +13,6 @@ export class QueueClass extends VoiceChannelClass{
     private index:number
     private time:number
     private paused:boolean
-    private currentChannel?:VoiceChannel
     private eventChannel?:VoiceChannel
     private watchEvent?:ChangeStream<any>
 
@@ -256,11 +255,16 @@ export class QueueClass extends VoiceChannelClass{
 
 export const getCurrentQueue = (serverId:string) => {
     const index = serverIdArray.indexOf(serverId)
-    
     if(index !== -1 ) return classArray[index]
     const currentQueue = new QueueClass()
-
+    
     serverIdArray.push(serverId)
     classArray.push(currentQueue)
     return currentQueue
+}
+
+export const updateCurrentQueue = (serverId:string, newClass:QueueClass) => {
+    const index = serverIdArray.indexOf(serverId)
+    if(index === -1 ) return SendError('updateCurrentQueue', `could not find the serverId, ${serverId}`)
+    classArray[index] = newClass
 }

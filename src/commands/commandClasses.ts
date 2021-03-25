@@ -7,8 +7,16 @@ export class VoiceChannelClass {
     private channel?:VoiceChannel
     private connection?:VoiceConnection
     private dispatcher?:StreamDispatcher
-    private dispatcherStatus:'running'|'ended' = "running"
+    private dispatcherStatus:'running'|'ended'
+    private leaveTimeout?:NodeJS.Timeout
 
+    constructor () {
+        this.channel = undefined
+        this.connection = undefined
+        this.dispatcher = undefined
+        this.dispatcherStatus = 'running'
+        this.leaveTimeout = undefined
+    }
     //Connection
     set setConnection(connection:VoiceConnection) { 
         //if(this.connection) this.endConnection()
@@ -49,6 +57,22 @@ export class VoiceChannelClass {
     }
     get getChannel(){
         return this.channel
+    }
+
+    //Timer
+    get getLeaveTimeout(){
+        return this.leaveTimeout
+    }
+    leaveIn(seconds:number){
+        this.leaveTimeout = setTimeout(() => {
+            console.log('leaving')
+            this.endConnection()
+        },seconds*1000)
+    }
+    clearLeaveTimeout(){
+        if(this.leaveTimeout)
+        clearTimeout(this.leaveTimeout)
+        this.leaveTimeout = undefined
     }
 
     //Listeners
