@@ -88,7 +88,7 @@ const isOnChannel = (memberChannel:VoiceChannel | null | undefined, needVoice:bo
         }
         if(!memberChannel) return resolve(false)
 
-        if(currentQueue.getChannel !== memberChannel && needVoice){
+        if(!currentQueue.getConnection || (currentQueue.getChannel !== memberChannel && needVoice)){
             memberChannel.join().then(connection => {
                 currentQueue.setChannel = memberChannel
                 currentQueue.setConnection = connection

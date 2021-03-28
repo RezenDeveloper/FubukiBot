@@ -48,7 +48,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         if(!members.length) return
         
         if(members[0] === (await getDBConfig()).botId){
-            currentQueue.leaveIn(5)
+            currentQueue.leaveIn(60)
             updateCurrentQueue(serverId, currentQueue)
         }
     }
