@@ -1,9 +1,10 @@
-import { VoiceChannel } from "discord.js";
+import { DMChannel, NewsChannel, TextChannel, VoiceChannel } from "discord.js";
 import { ChangeStream } from "mongodb";
 import { MongoFindOne, MongoInsertOne, MongoUpdateOne, MongoWatch } from "../database/bd";
 import { SendError } from "../utils/utils";
 import { VoiceChannelClass } from "./commandClasses";
 import { playCurrentMusic } from './voice/playCurrentMusic';
+import Discord from 'discord.js'
 
 const classArray:QueueClass[] = []
 const serverIdArray:string[] = []
@@ -15,6 +16,8 @@ export class QueueClass extends VoiceChannelClass{
     private paused:boolean
     private eventChannel?:VoiceChannel
     private watchEvent?:ChangeStream<any>
+    private currentEmbed?:Discord.MessageEmbed
+    private currentEmbedMessage?:Discord.Message
 
     constructor() {
         super();
@@ -261,6 +264,30 @@ export class QueueClass extends VoiceChannelClass{
     set setPaused(paused:boolean){
         this.paused = paused
         this.updateBdPaused()
+    }
+
+    //Functions
+    getCurrentEmbedMessage(){
+        return this.currentEmbedMessage
+    }
+
+    getCurrentEmbed(){
+        const { author, title, url, image} = this.queue[this.index]
+        
+        this.currentEmbed = new Discord.MessageEmbed()
+        .setColor("#0099ff")
+        .setAuthor(`Current playing Song ${this.index+1} from ${author}`)
+        .setTitle(title)
+        .setURL(url!)
+        .setThumbnail(image? image.url : 'https://cdn.discordapp.com/attachments/780268482519892009/823628073782083594/83372180_p0_master1200.png')
+        
+        return this.currentEmbed
+    }
+
+    sendCurrentEmbed(channel:TextChannel | DMChannel | NewsChannel){
+        channel.send(this.getCurrentEmbed()).then(message => {
+            this.currentEmbedMessage = message
+        })
     }
 }
 

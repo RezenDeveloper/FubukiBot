@@ -35,6 +35,9 @@ export const queue = (message:Message, currentQueue:QueueClass) => {
         QueueEmbed.setDisabledNavigationEmojis(['delete','jump'])
         QueueEmbed.setTimeout(0)
         QueueEmbed.build()
+        setTimeout(() => {
+            currentQueue.sendCurrentEmbed(channel)
+        },1000)
     }
     else{
         if(number <= currentQueueArray.length && number > 0){
