@@ -28,7 +28,6 @@ export class VoiceChannelClass {
     endConnection(){
         if(this.dispatcher) this.endDispatcher()
         this.connection!.disconnect()
-        this.channel = undefined
         this.connection = undefined
     }
 
@@ -77,7 +76,6 @@ export class VoiceChannelClass {
     private listenConnection(){
         this.connection!.on("disconnect", () => {
             this.dispatcherStatus = 'ended'
-            this.channel = undefined
             this.connection = undefined
         })
     }
