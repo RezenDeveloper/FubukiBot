@@ -39,8 +39,13 @@ export class QueueClass extends VoiceChannelClass{
             const { fullDocument, updateDescription } = data
             const { updatedFields } = updateDescription
 
-            const { index:bdIndex, play, paused:bdPaused, queue:bdQueue } = updatedFields as { index?:number, play?:boolean, paused?:boolean, queue?:VideoBd[] }
+            const { index:bdIndex, paused:bdPaused, queue:bdQueue } = updatedFields as { index?:number, paused?:boolean, queue?:VideoBd[] }
 
+            if(fullDocument.shuffle){
+                this.shuffleQueue()
+                playCurrentMusic(this)
+                MongoUpdateOne('voiceChannels', { serverId }, { shuffle:false })
+            }
             if(bdIndex !== undefined && bdIndex !== this.index) {
                 this.index = bdIndex
                 //console.log('new BdIndex',bdIndex)
@@ -102,6 +107,7 @@ export class QueueClass extends VoiceChannelClass{
             queue: newQueue,
             paused: false,
             play: true,
+            shuffle: false,
             index: this.index
         }
 
@@ -134,6 +140,7 @@ export class QueueClass extends VoiceChannelClass{
                 queue: newQueue,
                 index: this.index,
                 play: true,
+                shuffle: false
             }
     
             await MongoUpdateOne('voiceChannels', filter, value)
@@ -196,8 +203,12 @@ export class QueueClass extends VoiceChannelClass{
         this.queue = this.queue
         .map((a) => ({sort: Math.random(), value: a}))
         .sort((a, b) => a.sort - b.sort)
-        .map((a) => {
-            return a.value
+        .map((a, i) => {
+            return {
+                ...a.value,
+                index:i,
+                _id: i
+            }
         })
         this.index = 0
         this.insertBdChannel()

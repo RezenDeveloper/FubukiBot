@@ -55,5 +55,6 @@ interface ChannelDetails {
     queue: VideoApi[]
     paused: boolean
     play: boolean
+    shuffle: boolean
     index: number
 }
