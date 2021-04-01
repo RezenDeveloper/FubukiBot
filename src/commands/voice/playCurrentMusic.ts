@@ -9,6 +9,7 @@ export const playCurrentMusic = (currentQueue:QueueClass) => {
     let time = currentQueue.getTime.toString()
     let filter:Filter = "audio"
 
+    if(currentQueue.isPaused) currentQueue.setPaused = false
     const messageEmbed = currentQueue.getCurrentEmbedMessage()
 
     if(messageEmbed){

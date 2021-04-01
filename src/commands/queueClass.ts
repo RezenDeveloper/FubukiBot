@@ -266,6 +266,10 @@ export class QueueClass extends VoiceChannelClass{
         this.updateBdPaused()
     }
 
+    get isPaused(){ 
+        return this.paused
+    }
+
     //Functions
     getCurrentEmbedMessage(){
         return this.currentEmbedMessage
