@@ -61,4 +61,5 @@ interface ChannelDetails {
     play: boolean
     shuffle: boolean
     index: number
+    volume: number
 }

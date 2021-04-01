@@ -9,6 +9,13 @@ import Discord from 'discord.js'
 const classArray:QueueClass[] = []
 const serverIdArray:string[] = []
 
+interface UpdatedFields { 
+    volume?:number
+    index?:number
+    paused?:boolean 
+    queue?:VideoBd[] 
+}
+
 export class QueueClass extends VoiceChannelClass{
     private queue:VideoBd[]
     private index:number
@@ -42,12 +49,16 @@ export class QueueClass extends VoiceChannelClass{
             const { fullDocument, updateDescription } = data
             const { updatedFields } = updateDescription
 
-            const { index:bdIndex, paused:bdPaused, queue:bdQueue } = updatedFields as { index?:number, paused?:boolean, queue?:VideoBd[] }
+            const { index:bdIndex, paused:bdPaused, queue:bdQueue, volume } = updatedFields as UpdatedFields
 
             if(fullDocument.shuffle){
                 this.shuffleQueue()
                 playCurrentMusic(this)
                 MongoUpdateOne('voiceChannels', { serverId }, { shuffle:false })
+            }
+            if(volume){
+                if(volume > 2 || volume < 0) return
+                this.setVolume = volume
             }
             if(bdIndex !== undefined && bdIndex !== this.index) {
                 this.index = bdIndex
@@ -111,7 +122,8 @@ export class QueueClass extends VoiceChannelClass{
             paused: false,
             play: true,
             shuffle: false,
-            index: this.index
+            index: this.index,
+            volume: this.getDispatcher?.volume!
         }
 
         try {
@@ -143,7 +155,8 @@ export class QueueClass extends VoiceChannelClass{
                 queue: newQueue,
                 index: this.index,
                 play: true,
-                shuffle: false
+                shuffle: false,
+                volume: this.getDispatcher?.volume!
             }
     
             await MongoUpdateOne('voiceChannels', filter, value)
