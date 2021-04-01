@@ -43,6 +43,11 @@ export class VoiceChannelClass {
     get getDispatcherStatus(){
         return this.dispatcherStatus
     }
+    set setVolume(volume:number){
+        if(volume > 2 || volume < 0 ) return
+        this.dispatcher?.setVolume(volume)
+    }
+
     endDispatcher(){
         this.dispatcher!.destroy()
         this.dispatcherStatus = 'ended'

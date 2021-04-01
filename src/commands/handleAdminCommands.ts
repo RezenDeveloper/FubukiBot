@@ -9,6 +9,12 @@ export const isAdminCommand = async (message:Message) => {
     const { prefix, adminCommands, admins} = configData
     let errorMessage = false
 
+    const command = hasCommands(adminCommands, content, prefix, (message) => {
+        channel.send(message)
+        errorMessage = true
+    })
+    if(errorMessage) return true
+
     const id = admins.find(id => {
         return id === author.id
     })
@@ -16,12 +22,6 @@ export const isAdminCommand = async (message:Message) => {
         channel.send("You don't have the authority for this, baka!")
         return true
     }
-
-    const command = hasCommands(adminCommands, content, prefix, (message) => {
-        channel.send(message)
-        errorMessage = true
-    })
-    if(errorMessage) return true
 
     if(command){
         await handleAdminCommands(message, command as Icommand)
