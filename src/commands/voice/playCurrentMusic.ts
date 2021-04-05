@@ -2,6 +2,8 @@ import ytdl, { Filter } from 'ytdl-core'
 import { URL } from 'url'
 import type { QueueClass } from '../queueClass';
 
+const COOKIES = process.env.COOKIES
+
 export const playCurrentMusic = (currentQueue:QueueClass) => {
     const connection = currentQueue.getConnection
     const queue = currentQueue.getQueue
@@ -31,7 +33,17 @@ export const playCurrentMusic = (currentQueue:QueueClass) => {
 		filter = 'audioonly'
 	}
     
-    const stream = ytdl(videoUrl, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
+    const stream = ytdl(videoUrl, { 
+        begin: `${time}s`, 
+        filter: filter, 
+        quality: 'highestaudio', 
+        highWaterMark: 1 << 25,
+        requestOptions: {
+            headers: {
+                cookie: COOKIES
+            }
+        }
+    });
     const dispatcher = connection.play(stream)
     currentQueue.setDispatcher = dispatcher
 
