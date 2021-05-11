@@ -1,9 +1,9 @@
 import Discord, { Message } from 'discord.js'
-import { getDBConfig } from '../../utils/utils'
+import { getConfig } from '../../utils/api/fubuki/config';
 
 export const help = async (message:Message) => {
     const { channel } = message
-    const { prefix, voiceCommands, textCommands } = await getDBConfig();
+    const { prefix, voiceCommands, textCommands } = await getConfig();
 
     const chatValues = textCommands.filter((value => !value.isHidden)).map(({description, name}) => {
         return `**${prefix}${name}** - ${description}\n`

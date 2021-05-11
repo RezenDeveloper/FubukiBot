@@ -11,24 +11,22 @@ export const pause = async (message:Message, currentQueue:QueueClass) => {
     const connection = currentQueue.getConnection
 
     if(currentQueue.getDispatcherStatus === "ended"){
-        channel.send('This music is already over!')
+        channel.send('This music already ended!')
         message.react(getErrorEmote())
         return
     }
     if(voiceChannel && dispatcher && connection){
-        if(dispatcher.paused){
+        if(currentQueue.isPaused){
             currentQueue.setPaused = false
 
             channel.send("<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>")
             message.react(getCheckEmote(message))
-            dispatcher.resume()
         }
         else{
             currentQueue.setPaused = true
 
-            channel.send('<:Menacing:603270364314730526> Menacing: Toki wo Tomare! <:Menacing:603270364314730526>')
+            channel.send('<:Menacing:603270364314730526> Toki wo Tomare! <:Menacing:603270364314730526>')
             message.react(getCheckEmote(message))
-            dispatcher.pause()
         }
     }
 }

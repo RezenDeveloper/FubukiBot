@@ -1,12 +1,15 @@
 import Discord from 'discord.js'
+
 import { isTextCommand } from './commands/handleTextCommands'
 import { searchWaiting, isVoiceCommand } from './commands/handleVoiceCommands'
 import { isAdminCommand } from './commands/handleAdminCommands'
 import { searchObj } from './commands/commandClasses';
-import { handlePixivUrl } from './commands/text/pixivUrl';
-import { MongoFindOne, MongoUpdateOne } from './database/bd'
 import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
-import { getDBConfig } from './utils/utils';
+
+import { handlePixivUrl } from './commands/text/pixivUrl';
+
+import { getConfig } from './utils/api/fubuki/config';
+import { updateUser } from './utils/api/fubuki/users';
 
 const { TOKEN } = process.env;
 export const client = new Discord.Client()
@@ -16,7 +19,8 @@ client.once('ready', async () => {
 });
 
 client.on('message', async message => {
-    const configData = await getDBConfig()
+    const configData = await getConfig()
+    
     if(searchObj.getWaiting) return await searchWaiting(message)
 
     if(message.content.charAt(0) === configData.prefix){
@@ -29,17 +33,18 @@ client.on('message', async message => {
 });
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
+    const configData = await getConfig()
     const serverId = oldState.guild.id || newState.guild.id
     const currentQueue = getCurrentQueue(serverId)
     
     const userId = newState.member?.user.id
-    const channelId = newState.channelID
-    const data = await MongoFindOne('users', { userId }, { userId: 1 })
-    if(!!data){
-        await MongoUpdateOne('users', { userId }, { currentChannel: channelId ? channelId : '' })
+    const currentChannel = newState.channelID || ''
+
+    if(userId){
+        updateUser(userId, { currentChannel })
     }
     
-    if(currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === channelId) {
+    if(currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === currentChannel) {
         currentQueue.clearLeaveTimeout()
     }
 
@@ -47,7 +52,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         const members = currentQueue.getChannel.members.map(value => value.user.id)
         if(!members.length) return
         
-        if(members[0] === (await getDBConfig()).botId){
+        if(members[0] === configData.botId){
             currentQueue.leaveIn(60)
             updateCurrentQueue(serverId, currentQueue)
         }

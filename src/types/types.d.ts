@@ -20,11 +20,7 @@ interface VideoApi{
     title:string
     url?:string
     description:string
-    image?: {
-        url:string
-        height:number
-        width:number
-    }
+    image?:string|null
     seconds:number
     publishedAt:string
     author:string

@@ -1,10 +1,11 @@
 import { Message } from 'discord.js'
 import { clearStatus, setStatus } from './admin/status';
 import { deleteMessage, sendMessage } from './admin/message';
-import { getDBConfig, hasCommands } from '../utils/utils';
+import { hasCommands } from '../utils/utils';
+import { getConfig } from '../utils/api/fubuki/config';
 
 export const isAdminCommand = async (message:Message) => {
-    const configData = await getDBConfig()
+    const configData = await getConfig()
     const { content, channel, author } = message
     const { prefix, adminCommands, admins} = configData
     let errorMessage = false

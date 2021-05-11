@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { config } from '../commandClasses';
+import { getConfig } from '../../utils/api/fubuki/config';
 import { setStatus as setStatusUtils, clearStatus as clearStatusUtils, getCheckEmote } from './../../utils/utils';
 
 type statusType = "LISTENING" | "PLAYING" | "STREAMING" | "WATCHING" | "COMPETING" | "CUSTOM_STATUS"
@@ -13,7 +13,7 @@ export const setStatus = async (message:Message) => {
     const statusList = statusArray.map(value => value.toLowerCase()).join(' or ')
 
     if(!type || !statusArray.includes(type.toUpperCase()) || !status){
-        channel.send(`Wrong sentence. Try ${(await config.getConfig).prefix}setstatus (${statusList}) (status message)`)
+        channel.send(`Wrong sentence. Try ${(await getConfig()).prefix}setstatus (${statusList}) (status message)`)
         return
     }
     else{

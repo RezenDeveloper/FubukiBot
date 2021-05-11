@@ -1,10 +1,8 @@
-import { Channel, DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
-import { config } from '../commandClasses';
-import { MongoSearch } from './../../database/bd';
+import { Channel, Message } from 'discord.js';
 import { client } from './../../bot';
 import { getCheckEmote, getErrorEmote } from '../../utils/utils';
+import { getConfig } from '../../utils/api/fubuki/config';
 
-type someChannel = TextChannel | DMChannel | NewsChannel
 export const sendMessage = async (message:Message) => {
     const { content, channel } = message
 
@@ -27,7 +25,7 @@ export const sendMessage = async (message:Message) => {
     }
     
     if(!id || !text){
-        channel.send(`Wrong sentence. Try ${(await config.getConfig).prefix}sendMessage (channelID) (message)`)
+        channel.send(`Wrong sentence. Try ${(await getConfig()).prefix}sendMessage (channelID) (message)`)
         message.react(getErrorEmote())
         return
     }
@@ -36,8 +34,9 @@ export const sendMessage = async (message:Message) => {
         send(sendChannel)
     }
     else{
-        const sendChannel = client.channels.cache.get(await getChannelId(id))
-        send(sendChannel)
+        channel.send("This is not a valid channel ID")
+        message.react(getErrorEmote())
+        return
     }
 }
 
@@ -48,7 +47,7 @@ export const deleteMessage = async (message:Message) => {
     const [_, messageId, channelId] = contentArray
 
     if(!messageId || !channelId){
-        channel.send(`Wrong sentence. Try ${(await config.getConfig).prefix}deleteMessage (messageID) (channelID)`)
+        channel.send(`Wrong sentence. Try ${(await getConfig()).prefix}deleteMessage (messageID) (channelID)`)
         message.react(getErrorEmote())
         return
     }
@@ -57,7 +56,9 @@ export const deleteMessage = async (message:Message) => {
         sendChannel = client.channels.cache.get(channelId)
     }
     else{
-        sendChannel = client.channels.cache.get(await getChannelId(channelId))
+        channel.send('This is not a valid channel ID')
+        message.react(getErrorEmote())
+        return
     }
     if(!sendChannel){
         channel.send('Sorry, i could not find a channel with this id')
@@ -90,10 +91,4 @@ export const deleteMessage = async (message:Message) => {
         }
     }
     
-}
-
-const getChannelId = async (name:string) => {
-    const channel = await MongoSearch('channels',{ name }) as Ichannels[]
-    const { id } = channel[0]
-    return id
 }

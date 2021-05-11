@@ -45,7 +45,9 @@ interface iSnippet {
     channelTitle:string
     liveBroadcastContent:string
     thumbnails:{
-        maxres:string
+        maxres?:{
+            url: string
+        }
     }
 }
 
@@ -94,7 +96,7 @@ export const getVideoInfo = (id:string):Promise<VideoApi> => {
         const {title, description, publishedAt, channelTitle, liveBroadcastContent, thumbnails} = snippet
         const {privacyStatus} = status
         const seconds = moment.duration(contentDetails.duration, "seconds").asSeconds()
-        const image = thumbnails.maxres
+        const image = thumbnails.maxres?.url || null
         const isLive = liveBroadcastContent === "live"
         return {
             title,
@@ -117,7 +119,7 @@ export const getPlaylistInfo = (id:string) => {
             itemCount:contentDetails.itemCount,
             title,
             description,
-            image:thumbnails.maxres,
+            image:thumbnails.maxres?.url || null,
             author:channelTitle
         }
     })

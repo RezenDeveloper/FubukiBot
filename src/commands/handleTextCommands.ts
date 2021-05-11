@@ -1,9 +1,10 @@
 import { Message } from 'discord.js'
-import { getDBConfig, hasCommands } from '../utils/utils'
+import { getConfig } from '../utils/api/fubuki/config'
+import { hasCommands } from '../utils/utils'
 import { help, avatar, randomFubuki, d100, getDice, d20, sauce, app } from './text/getTextCommands'
 
 export const isTextCommand = async (message:Message) => {
-    const configData = await getDBConfig()
+    const configData = await getConfig()
     const { content, channel } = message
     const { prefix, textCommands } = configData
     let errorMessage = false

@@ -12,11 +12,7 @@ export const playCurrentMusic = (currentQueue:QueueClass) => {
     let filter:Filter = "audio"
 
     if(currentQueue.isPaused) currentQueue.setPaused = false
-    const messageEmbed = currentQueue.getCurrentEmbedMessage()
-
-    if(messageEmbed){
-        messageEmbed.edit(currentQueue.getCurrentEmbed())
-    }
+    currentQueue.updateEmbed()
     
     //console.log("index: "+index+" length: "+queue.length)
     //console.log('index++ '+ (index+1))

@@ -1,6 +1,6 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
-import { MongoUpdateOne } from "../database/bd";
-import { SendError } from "../utils/utils"
+import { updateServer } from "../utils/api/fubuki/server";
+import { SendError, truncate } from "../utils/utils"
 
 export class VoiceChannelClass {
     private channel?:VoiceChannel
@@ -8,6 +8,7 @@ export class VoiceChannelClass {
     private dispatcher?:StreamDispatcher
     private dispatcherStatus:'running'|'ended'
     private leaveTimeout?:NodeJS.Timeout
+    private subscription?:ZenObservable.Subscription
 
     constructor () {
         this.channel = undefined
@@ -16,6 +17,22 @@ export class VoiceChannelClass {
         this.dispatcherStatus = 'running'
         this.leaveTimeout = undefined
     }
+
+    //Subscription
+    set setSubscription(subscription:ZenObservable.Subscription | undefined) {
+        this.subscription = subscription
+    }
+
+    get getSubscription() {
+        return this.subscription
+    }
+
+    endSubscription(){
+        if(!this.subscription) return
+        this.subscription.unsubscribe()
+        this.subscription = undefined
+    }
+
     //Connection
     set setConnection(connection:VoiceConnection) { 
         //if(this.connection) this.endConnection()
@@ -27,6 +44,7 @@ export class VoiceChannelClass {
     }
     endConnection(){
         if(this.dispatcher) this.endDispatcher()
+        if(this.subscription) this.endSubscription()
         this.connection!.disconnect()
         this.connection = undefined
     }
@@ -48,6 +66,17 @@ export class VoiceChannelClass {
         this.dispatcher?.setVolume(volume)
     }
 
+    pause(setIsPaused?:boolean){
+        if(!this.dispatcher || this.dispatcherStatus === "ended") return
+        
+        if(setIsPaused === undefined){
+            if(this.dispatcher.paused) this.dispatcher.resume()
+            else this.dispatcher.pause()
+        }
+        else if(setIsPaused) this.dispatcher.pause()
+        else this.dispatcher.resume()
+    }
+
     endDispatcher(){
         this.dispatcher!.destroy()
         this.dispatcherStatus = 'ended'
@@ -55,7 +84,10 @@ export class VoiceChannelClass {
 
     //Channel
     set setChannel(channel:VoiceChannel) {
-        MongoUpdateOne('voiceChannels', { serverId:channel.guild.id }, { channelId:channel.id })
+        const serverId = channel.guild.id
+        const channelId = channel.id
+        updateServer(serverId, { channelId })
+
         this.channel = channel
     }
     get getChannel(){

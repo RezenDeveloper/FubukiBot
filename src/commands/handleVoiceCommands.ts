@@ -1,8 +1,9 @@
 import { Message, VoiceChannel } from 'discord.js'
-import { getDBConfig, getNickname, hasCommands } from '../utils/utils'
+import { getNickname, hasCommands } from '../utils/utils'
 import { play, pause, queue, playDirection, shuffle, time, search, clear, leave } from './voice/getVoiceCommands'
 import { getCurrentQueue } from './queueClass'
 import type { QueueClass } from './queueClass'
+import { getConfig } from '../utils/api/fubuki/config'
 
 export const searchWaiting = async (message: Message) => {
     const currentQueue = getCurrentQueue(message.guild!.id)
@@ -10,7 +11,7 @@ export const searchWaiting = async (message: Message) => {
 }
 
 export const isVoiceCommand = async (message:Message) => {
-    const configData = await getDBConfig()
+    const configData = await getConfig()
     const { content, channel, author } = message
     const { prefix, voiceCommands } = configData
     let errorMessage = false
