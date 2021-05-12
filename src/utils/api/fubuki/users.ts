@@ -75,3 +75,25 @@ export const getUserNickName = async (userId:string) => {
     return null
   }
 }
+
+export const insertUser = gql`
+  mutation (
+      $userId:ID!
+      $name:String!
+      $nickName:String
+      $currentChannel:String
+      $identifier:String!
+      $password:String!
+  ) {
+      insertUser(
+          userId: $userId
+          name: $name
+          nickName: $nickName
+          currentChannel: $currentChannel
+          identifier: $identifier
+          password: $password
+      ){
+          name
+      }
+  }
+` 
