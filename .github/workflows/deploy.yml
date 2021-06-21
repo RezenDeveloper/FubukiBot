@@ -1,7 +1,7 @@
 on:
   push:
-    branches: [ test-deploy ]
-name: Test Deploy
+    branches: [ master ]
+name: Deploy
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -15,6 +15,10 @@ jobs:
           script: |
             cd fubuki/FubukiBot
 
+            git checkout master
+            git pull origin master
+            yarn
+
             touch .env
             > .env
             echo TOKEN=${{ secrets.TOKEN }} >> .env
@@ -25,5 +29,8 @@ jobs:
             echo HTTP_URL=${{ secrets.HTTP_URL }} >> .env
             echo WS_URL=${{ secrets.WS_URL }} >> .env
 
-            sh deploy.sh
+            yarn build
+
+            pm2 delete fubuki-bot
+            pm2 start yarn --name fubuki-bot -- start
 
