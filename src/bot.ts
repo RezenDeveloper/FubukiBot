@@ -1,15 +1,16 @@
 import Discord from 'discord.js'
 
+import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'
 import { searchWaiting, isVoiceCommand } from './commands/handleVoiceCommands'
 import { isAdminCommand } from './commands/handleAdminCommands'
-import { searchObj } from './commands/commandClasses';
+import { searchObj } from './commands/commandClasses'
 import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
 
-import { handlePixivUrl } from './commands/text/pixivUrl';
+import { handlePixivUrl } from './commands/text/pixivUrl'
 
-import { getConfig } from './utils/api/fubuki/config';
-import { updateUser } from './utils/api/fubuki/users';
+import { getConfig } from './utils/api/fubuki/config'
+import { updateUser } from './utils/api/fubuki/users'
 
 const { TOKEN } = process.env;
 export const client = new Discord.Client()
