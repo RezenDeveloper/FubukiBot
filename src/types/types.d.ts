@@ -9,8 +9,9 @@ interface Iconfig {
 interface Icommand {
     name: string
     description: string
-    commands: string[],
+    commands: string[]
     needParam: boolean
+    isHidden?: boolean
 }
 interface IcommandVoice extends Icommand {
     needVoice: boolean
@@ -19,7 +20,7 @@ interface VideoApi{
     title:string
     url?:string
     description:string
-    image:string
+    image?:string|null
     seconds:number
     publishedAt:string
     author:string
@@ -54,5 +55,7 @@ interface ChannelDetails {
     queue: VideoApi[]
     paused: boolean
     play: boolean
+    shuffle: boolean
     index: number
+    volume: number
 }

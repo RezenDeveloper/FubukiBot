@@ -1,14 +1,37 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
-import { MongoUpdateOne } from "../database/bd";
-import { clearStatus, SendError, setStatus } from "../utils/utils"
-import { getDBConfig } from './../utils/utils';
+import { updateServer } from "../utils/api/fubuki/server";
+import { SendError, truncate } from "../utils/utils"
 
-class VoiceChannelClass {
+export class VoiceChannelClass {
     private channel?:VoiceChannel
-    private musicStatus?:string
     private connection?:VoiceConnection
     private dispatcher?:StreamDispatcher
-    private dispatcherStatus:'running'|'ended' = "running"
+    private dispatcherStatus:'running'|'ended'
+    private leaveTimeout?:NodeJS.Timeout
+    private subscription?:ZenObservable.Subscription
+
+    constructor () {
+        this.channel = undefined
+        this.connection = undefined
+        this.dispatcher = undefined
+        this.dispatcherStatus = 'running'
+        this.leaveTimeout = undefined
+    }
+
+    //Subscription
+    set setSubscription(subscription:ZenObservable.Subscription | undefined) {
+        this.subscription = subscription
+    }
+
+    get getSubscription() {
+        return this.subscription
+    }
+
+    endSubscription(){
+        if(!this.subscription) return
+        this.subscription.unsubscribe()
+        this.subscription = undefined
+    }
 
     //Connection
     set setConnection(connection:VoiceConnection) { 
@@ -21,8 +44,8 @@ class VoiceChannelClass {
     }
     endConnection(){
         if(this.dispatcher) this.endDispatcher()
+        if(this.subscription) this.endSubscription()
         this.connection!.disconnect()
-        this.channel = undefined
         this.connection = undefined
     }
 
@@ -38,6 +61,22 @@ class VoiceChannelClass {
     get getDispatcherStatus(){
         return this.dispatcherStatus
     }
+    set setVolume(volume:number){
+        if(volume > 2 || volume < 0 ) return
+        this.dispatcher?.setVolume(volume)
+    }
+
+    pause(setIsPaused?:boolean){
+        if(!this.dispatcher || this.dispatcherStatus === "ended") return
+        
+        if(setIsPaused === undefined){
+            if(this.dispatcher.paused) this.dispatcher.resume()
+            else this.dispatcher.pause()
+        }
+        else if(setIsPaused) this.dispatcher.pause()
+        else this.dispatcher.resume()
+    }
+
     endDispatcher(){
         this.dispatcher!.destroy()
         this.dispatcherStatus = 'ended'
@@ -45,44 +84,49 @@ class VoiceChannelClass {
 
     //Channel
     set setChannel(channel:VoiceChannel) {
-        MongoUpdateOne('voiceChannels', { serverId:channel.guild.id }, { channelId:channel.id })
+        const serverId = channel.guild.id
+        const channelId = channel.id
+        updateServer(serverId, { channelId })
+
         this.channel = channel
     }
     get getChannel(){
         return this.channel
     }
-    set setMusicStatus(status:string){
-        this.musicStatus = status
+
+    //Timer
+    get getLeaveTimeout(){
+        return this.leaveTimeout
     }
-    listenConnection(){
+    leaveIn(seconds:number){
+        this.leaveTimeout = setTimeout(() => {
+            this.endConnection()
+        },seconds*1000)
+    }
+    clearLeaveTimeout(){
+        if(this.leaveTimeout)
+        clearTimeout(this.leaveTimeout)
+        this.leaveTimeout = undefined
+    }
+
+    //Listeners
+    private listenConnection(){
         this.connection!.on("disconnect", () => {
             this.dispatcherStatus = 'ended'
-            this.channel = undefined
             this.connection = undefined
         })
     }
-    listenDispatcher(){
+    private listenDispatcher(){
         this.dispatcher!.on("start", async () => {
-            await setStatus(this.musicStatus!, 'LISTENING')
             this.dispatcherStatus = 'running'
         })
         this.dispatcher!.on('error', async (err) => { 
             SendError("Dispatcher",err)
-            await clearStatus()
             this.dispatcherStatus = 'ended'
         })
-        this.dispatcher!.on('close', async () => { 
-            await clearStatus()
+        this.dispatcher!.on('close', async () => {
             this.dispatcherStatus = 'ended'
         })
-    }
-}
-
-class ConfigClass {
-    private config = getDBConfig()
-
-    get getConfig(){
-        return this.config
     }
 }
 class SearchClass {
@@ -104,5 +148,3 @@ class SearchClass {
 }
 
 export const searchObj = new SearchClass()
-export const config = new ConfigClass()
-export const currentVoiceChannel = new VoiceChannelClass()

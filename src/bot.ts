@@ -1,110 +1,63 @@
-import Discord, {Message} from 'discord.js'
-import { getNickname, hasCommands } from './utils/utils'
-import { useTextCommands } from './commands/useTextCommands'
-import { useVoiceCommands, searchWaiting } from './commands/useVoiceCommands'
-import { useAdminCommands } from './commands/useAdminCommands'
-import { config, searchObj } from './commands/commandClasses';
-import { handlePixivUrl } from './commands/text/pixivUrl';
-import { MongoFindOne, MongoUpdateOne } from './database/bd'
+import Discord from 'discord.js'
 
-export const client = new Discord.Client()
+import 'dotenv/config'
+import { isTextCommand } from './commands/handleTextCommands'
+import { searchWaiting, isVoiceCommand } from './commands/handleVoiceCommands'
+import { isAdminCommand } from './commands/handleAdminCommands'
+import { searchObj } from './commands/commandClasses'
+import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
+
+import { handlePixivUrl } from './commands/text/pixivUrl'
+
+import { getConfig } from './utils/api/fubuki/config'
+import { updateUser } from './utils/api/fubuki/users'
+
 const { TOKEN } = process.env;
-
-client.login(TOKEN);
+export const client = new Discord.Client()
 
 client.once('ready', async () => {
     console.log('Ready!')
 });
 
 client.on('message', async message => {
-    const configData = await config.getConfig
+    const configData = await getConfig()
+    
+    if(searchObj.getWaiting) return await searchWaiting(message)
 
-    if(searchObj.getWaiting){
-        await searchWaiting(message)
-        return
+    if(message.content.charAt(0) === configData.prefix){
+        if(await isTextCommand(message)) return
+        if(await isVoiceCommand(message)) return
+        if(await isAdminCommand(message)) return
     }
-    else if(message.content.charAt(0) === configData.prefix){
-        if(await TextCommand(configData, message)) return
-        if(await VoiceCommand(configData, message)) return
-        if(await AdminCommand(configData, message, configData.admins)) return
-    }
-    else{
-        handlePixivUrl(message)
-    }
+
+    handlePixivUrl(message)
 });
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
-    const userId = newState.member?.user.id
-    const channelId = newState.channelID
-    const data = await MongoFindOne('users', { userId }, { userId: 1 })
+    const configData = await getConfig()
+    const serverId = oldState.guild.id || newState.guild.id
+    const currentQueue = getCurrentQueue(serverId)
     
-    if(!!data){
-        await MongoUpdateOne('users', { userId }, { currentChannel: channelId ? channelId : '' })
+    const userId = newState.member?.user.id
+    const currentChannel = newState.channelID || ''
+
+    if(userId){
+        updateUser(userId, { currentChannel })
+    }
+    
+    if(currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === currentChannel) {
+        currentQueue.clearLeaveTimeout()
+    }
+
+    if(currentQueue.getChannel && !currentQueue.getLeaveTimeout){
+        const members = currentQueue.getChannel.members.map(value => value.user.id)
+        if(!members.length) return
+        
+        if(members[0] === configData.botId){
+            currentQueue.leaveIn(60)
+            updateCurrentQueue(serverId, currentQueue)
+        }
     }
 })
 
-const TextCommand = async (configData:Iconfig, message:Message) => {
-    const { content, channel } = message
-    const { prefix, textCommands } = configData
-    let errorMessage = false
-
-    const command = hasCommands(textCommands, content, prefix, (message) => {
-        channel.send(message)
-        errorMessage = true
-    })
-    if(command){
-        await useTextCommands(message, command as Icommand)
-        return true
-    }
-    else if (errorMessage){
-        return true
-    }
-}
-
-const VoiceCommand = async (configData:Iconfig, message:Message) => {
-    const { content, channel, author } = message
-    const { prefix, voiceCommands } = configData
-    let errorMessage = false
-    
-    const command = hasCommands(voiceCommands, content, prefix, (message) => { 
-        channel.send(message)
-        errorMessage = true
-    })
-    if(command && channel.type === "text") {
-        await useVoiceCommands(message, command as IcommandVoice)
-        return true
-    }
-    else if(command && channel.type !== "text") {
-        channel.send(`Sorry ${await getNickname(author)}, i can't do that on this channel.`)
-        return true
-    }
-    else if (errorMessage){
-        return true
-    }
-}
-
-const AdminCommand = async (configData:Iconfig, message:Message, adminArray:string[]) => {
-    const { content, channel, author } = message
-    const { prefix, adminCommands} = configData
-    let errorMessage = false
-
-    const id = adminArray.find(id => {
-        return id === author.id
-    })
-    if(!id){
-        channel.send("You don't have the authority for this, baka!")
-        return true
-    }
-
-    const command = hasCommands(adminCommands, content, prefix, (message) => {
-        channel.send(message)
-        errorMessage = true
-    })
-    if(command){
-        await useAdminCommands(message, command as Icommand)
-        return true
-    }
-    else if (errorMessage){
-        return true
-    }
-}
+client.login(TOKEN)

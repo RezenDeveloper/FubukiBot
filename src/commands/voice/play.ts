@@ -1,12 +1,12 @@
 import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
-import { currentQueue } from '../queueClass'
+import type { QueueClass } from '../queueClass';
 import { getCheckEmote, getErrorEmote, getPlaylistId, SendError } from '../../utils/utils'
 import { SearchVideo, getVideoInfo, getPlaylist } from '../../utils/api/ytSearch' 
 import ytdl from 'ytdl-core'
 import { playCurrentMusic } from './playCurrentMusic';
 import { URL } from 'url'
 
-export const play = (message:Message, add?:boolean) => {
+export const play = (message:Message, currentQueue:QueueClass, add?:boolean) => {
     const { content, channel } = message
 
     const searchParam = content.split(' ')[1];
@@ -16,13 +16,6 @@ export const play = (message:Message, add?:boolean) => {
 
     //Is a playlist link
     if(playlistId){
-        const indexParam = new URL(searchParam).searchParams.get('index')
-        let index = 0
-        if(indexParam){
-            index = parseFloat(indexParam)
-        }
-        currentQueue.setIndex = index
-
         getPlaylist(playlistId).then(({ items, title, author, itemCount }) => {
             //Add a playlist to the queue
             if(add && currentQueueArray.length !== 0){
@@ -35,11 +28,14 @@ export const play = (message:Message, add?:boolean) => {
             }
             //Start a new queue with the playlist
             else{
-                currentQueue.setIndex = 0;
+                const indexParam = new URL(searchParam).searchParams.get('index')
+                const index = indexParam ? parseFloat(indexParam) : 1
+
                 currentQueue.setQueue = items
-                playCurrentMusic()
+                currentQueue.setIndex = index-1
+                playCurrentMusic(currentQueue)
             }
-            channel.send(`Playing the playlist **${title}**\n From ${author} with ${itemCount} songs!`);
+            channel.send(`Playing the playlist **${title}**\nFrom ${author} with ${itemCount} songs!`);
             message.react(getCheckEmote(message))
         }).catch(err => SendError("getPlaylist",err));
     }
@@ -66,7 +62,7 @@ export const play = (message:Message, add?:boolean) => {
                         url:searchParam
                     }
                 ]
-                playCurrentMusic()
+                playCurrentMusic(currentQueue)
             }
             sendTitle(channel, result.title, add?"Add":"Play")
             message.react(getCheckEmote(message))
@@ -95,7 +91,7 @@ export const play = (message:Message, add?:boolean) => {
             else{
                 currentQueue.setIndex = 0;
                 currentQueue.setQueue = result
-                playCurrentMusic()
+                playCurrentMusic(currentQueue)
                 sendTitle(channel, title, "Play")
                 message.react(getCheckEmote(message))
             }

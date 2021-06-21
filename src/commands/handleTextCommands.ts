@@ -1,7 +1,28 @@
 import { Message } from 'discord.js'
+import { getConfig } from '../utils/api/fubuki/config'
+import { hasCommands } from '../utils/utils'
 import { help, avatar, randomFubuki, d100, getDice, d20, sauce, app } from './text/getTextCommands'
 
-export const useTextCommands = async (message:Message, command:Icommand) => {
+export const isTextCommand = async (message:Message) => {
+    const configData = await getConfig()
+    const { content, channel } = message
+    const { prefix, textCommands } = configData
+    let errorMessage = false
+
+    const command = hasCommands(textCommands, content, prefix, (message) => {
+        channel.send(message)
+        errorMessage = true
+    })
+    if(command){
+        await handleTextCommands(message, command as Icommand)
+        return true
+    }
+    else if (errorMessage){
+        return true
+    }
+}
+
+const handleTextCommands = async (message:Message, command:Icommand) => {
     const { channel } = message
     
     switch (command.commands[0]){

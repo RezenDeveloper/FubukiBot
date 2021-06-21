@@ -1,19 +1,7 @@
-import { MongoSearch } from "../database/bd"
 import { EmojiResolvable, Message, User } from 'discord.js'
 import { client } from '../bot'
 import { URL } from 'url'
- 
-interface iNickname {
-    id:string
-    name:string
-}
-
-let result:iNickname[]
-
-export const getDBConfig = async () => {
-    const config:Iconfig[] = await MongoSearch('configs', {});
-    return config[0]
-}
+import { getUserNickName } from './api/fubuki/users'
 
 export const hasCommands = (commandArray:Icommand[] | IcommandVoice[], content:string, prefix:string, sendError:(message:string) => void ):Icommand| IcommandVoice | undefined => {
     return commandArray.find(({ commands, needParam }) => {
@@ -39,13 +27,10 @@ export const hasCommands = (commandArray:Icommand[] | IcommandVoice[], content:s
 }
 
 export const getNickname = async (author:User) => {
-    const { id:authorId } = author
-    result = result? result : await MongoSearch("nicknames", {})
-
-    const nick = result.find( ({ id }) => {
-        return id === authorId
-    })
-    return nick? nick.name : `${author.username}-san` 
+    const { id } = author
+    const nickName = await getUserNickName(id)
+    
+    return nickName || `${author.username}-san` 
 }
 
 export const getPlaylistId = (url:string) => {

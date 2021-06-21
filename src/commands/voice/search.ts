@@ -4,9 +4,9 @@ import { FieldsEmbed } from 'discord-paginationembed'
 import { getNickname, SendError } from './../../utils/utils';
 import { searchObj } from './../commandClasses';
 import { playCurrentMusic } from './playCurrentMusic';
-import { currentQueue } from './../queueClass';
+import type { QueueClass } from '../queueClass';
 
-export const search = async (message:Message, waiting?:boolean) => {
+export const search = async (message:Message, currentQueue:QueueClass, waiting?:boolean) => {
 
     const { content, channel, author } = message
     const nick = await getNickname(author)
@@ -30,7 +30,7 @@ export const search = async (message:Message, waiting?:boolean) => {
                     music
                 ]
                 if(queue.length === 0){
-                    playCurrentMusic()
+                    playCurrentMusic(currentQueue)
                     channel.send(`Playing the song: ${music.title}`);
                 }
                 else{

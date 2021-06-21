@@ -1,5 +1,7 @@
-import axios from 'axios'
 import { Message } from 'discord.js'
+import { apolloClient, getToken } from '../../utils/api/fubuki/fubuki'
+import { insertUser } from '../../utils/api/fubuki/users'
+import { getNickname, SendError } from '../../utils/utils'
 
 export const app = async (message:Message) => {
     const { author } = message
@@ -7,18 +9,29 @@ export const app = async (message:Message) => {
     const password = getPassword()
 
     try {
-        await axios.post('https://fubuki-server.herokuapp.com/api/auth/register', {
-            name: author.username,
-            nickName: '',
-            password,
-            identifier: author.discriminator,
-            userId: author.id,
-            secret: process.env.SERVER_SECRET
+        await apolloClient.mutate({ 
+            mutation:insertUser,
+            variables: {
+                userId: author.id,
+                name: author.username,
+                nickName: await getNickname(author),
+                identifier: author.discriminator,
+                password
+            },
+            context: {
+                headers: {
+                    authorization: `Bearer ${await getToken()}`
+                }
+            }
         })
         author.send(`Your password is ${password}`)
     } catch (error) {
-        if(error.response.data.error){
-            author.send(error.response.data.error)
+        const errorMsg = error.graphQLErrors[0].message
+        if(errorMsg === 'User already registered'){
+            author.send(errorMsg)
+        }
+        else{
+            SendError('App registration error', error)
         }
     }
     

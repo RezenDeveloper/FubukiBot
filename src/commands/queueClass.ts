@@ -1,195 +1,108 @@
-import { VoiceChannel } from "discord.js";
+import { DMChannel, NewsChannel, TextChannel, VoiceChannel } from "discord.js";
 import { ChangeStream } from "mongodb";
-import { MongoFindOne, MongoInsertOne, MongoUpdateOne, MongoWatch } from "../database/bd";
 import { SendError } from "../utils/utils";
-import { currentVoiceChannel } from "./commandClasses";
+import { VoiceChannelClass } from "./commandClasses";
 import { playCurrentMusic } from './voice/playCurrentMusic';
+import Discord from 'discord.js'
+import { insertServer, serverExists, updateServer, watchServer } from "../utils/api/fubuki/server";
+import { getShuffleQueue, updateQueue } from "../utils/api/fubuki/queue";
 
+const classArray:QueueClass[] = []
+const serverIdArray:string[] = []
 
-class QueueClass{
+export class QueueClass extends VoiceChannelClass{
     private queue:VideoBd[]
     private index:number
     private time:number
     private paused:boolean
-    private currentChannel?:VoiceChannel
-    private eventChannel?:VoiceChannel
-    private watchEvent?:ChangeStream<any>
+    private currentEmbed?:Discord.MessageEmbed
+    private currentEmbedMessage?:Discord.Message
 
     constructor() {
+        super();
         this.queue = []
         this.index = 0
         this.time = 0
-        this.paused = currentVoiceChannel.getDispatcher?.paused !== undefined? currentVoiceChannel.getDispatcher?.paused : false
+        this.paused = super.getDispatcher?.paused !== undefined? super.getDispatcher?.paused : false
     }
 
     //DataBase
 
-    watchChannel = async () => {
-        this.updateChannel()
-        this.eventChannel = this.currentChannel
+    startWatch = async () => {
+        const serverId = super.getChannel!.guild.id
+        super.setSubscription = await watchServer(serverId, (data) => {
 
-        const serverId = this.currentChannel!.guild.id
-
-        const { watch, client } = await MongoWatch('voiceChannels', { 'fullDocument.serverId': serverId })
-        this.watchEvent = watch
-
-        this.watchEvent.on('change', (data:any) => {
-
-            const { fullDocument, updateDescription } = data
-            const { updatedFields } = updateDescription
-
-            const { index:bdIndex, play, paused:bdPaused, queue:bdQueue } = updatedFields as { index?:number, play?:boolean, paused?:boolean, queue?:VideoBd[] }
-
-            if(bdIndex !== undefined && bdIndex !== this.index) {
-                this.index = bdIndex
-                //console.log('new BdIndex',bdIndex)
-                if(!fullDocument.play) return
-                playCurrentMusic()
-            }
-            if(bdPaused !== undefined && bdPaused !== this.paused) {
-                const dispatcher = currentVoiceChannel.getDispatcher
-                if(dispatcher !== undefined){
-                    if(bdPaused)
-                        dispatcher.pause()
-                    else dispatcher.resume()
+            if(data.queue !== null) this.queue = data.queue
+            if(data.controls !== null){
+                const { index, paused, volume, play } = data.controls
+                if(volume !== null) super.setVolume = volume
+                if(index !== null) this.index = index
+                if(paused !== null) super.pause(paused)
+                
+                if(play && !this.paused){
+                    playCurrentMusic(this)
                 }
-                this.paused = bdPaused
             }
-            if(bdQueue !== undefined){
-                this.queue = bdQueue.sort((a,b) => a.index! - b.index!)
-            }
-            if(/^queue\.\d{1,}\.index$/.test(Object.keys(updatedFields)[0])){
-                const key = Object.keys(updatedFields)[0]
-
-                const index = Number(key.split('.')[1])
-                const { _id } = fullDocument.queue[index] as VideoBd
-                const newValue = updatedFields[key]
-
-                //console.log('_id:',_id ,'index:', index, 'newValue:',newValue)
-
-                this.queue = this.queue.map((value) => {
-                    if(value._id === _id) value.index = newValue
-                    return value
-                }).sort((a,b) => a.index! - b.index!)
-            }
-        })
-
-        this.watchEvent.on('close', () => {
-            client.close()
+            this.updateEmbed()
         })
     }
 
     insertBdChannel = async () => {
-        this.updateChannel()
-        
-        const exists = await MongoFindOne('voiceChannels', { serverId: this.currentChannel!.guild.id }, { serverId: 1 }) as { _id:string, serverId:string }
-        
-        if(exists){
-            this.updateBdChannel()
+        const serverId = super.getChannel!.guild.id
+
+        if(await serverExists(serverId)){
+            await this.updateBdChannel()
+            if(!super.getSubscription) await this.startWatch()
             return
         }
 
-        const newQueue = this.queue.map((value, i) => {
-            return { ...value, index:i, _id:i }
-        })
-
-        const Channel:ChannelDetails = {
-            serverId: this.currentChannel!.guild.id,
-            serverName: this.currentChannel!.guild.name,
-            serverIcon: this.currentChannel!.guild.iconURL(),
-            channelId: this.currentChannel!.id,
-            channelName: this.currentChannel!.name,
-            queue: newQueue,
-            paused: false,
-            play: true,
-            index: this.index
+        const variables = {
+            serverId: super.getChannel!.guild.id,
+            serverName: super.getChannel!.guild.name,
+            serverIcon: super.getChannel!.guild.iconURL(),
+            channelId: super.getChannel!.id,
+            channelName: super.getChannel!.name
         }
 
-        try {
-
-            await MongoInsertOne('voiceChannels', Channel)
-
-        } catch (error) {
-            console.log(error)
-            SendError('insert BdQueue', error)
-        }
+        await insertServer(variables)
+        await updateQueue(serverId, this.queue)
+        if(!super.getSubscription) await this.startWatch()
     }
 
     updateBdChannel = async () => {
-        this.updateChannel()
-
-        try {
-            const newQueue = this.queue.map((value, i,) => {
-                return { 
-                    ...value, 
-                    index: value.index? value.index : i,
-                    _id: value._id ? value._id : i 
-                }
-            })
-            const filter = { serverId: this.currentChannel!.guild.id }
-            const value = { 
-                serverIcon: this.currentChannel!.guild.iconURL(),
-                serverName: this.currentChannel!.guild.name,
-                channelName: this.currentChannel!.name,
-                channelId: this.currentChannel!.id,
-                queue: newQueue,
-                index: this.index,
-                play: true,
-            }
-    
-            await MongoUpdateOne('voiceChannels', filter, value)
-
-        } catch (error) {
-            console.log(error)
-            SendError('update BdQueue', error)
+        const serverId = super.getChannel!.guild.id
+        const values = { 
+            serverIcon: super.getChannel!.guild.iconURL(),
+            serverName: super.getChannel!.guild.name,
+            channelName: super.getChannel!.name,
+            channelId: super.getChannel!.id,
+            paused: this.paused,
+            index: this.index,
+            volume: this.getDispatcher?.volume!
         }
+
+        await updateServer(serverId, values)
+        await updateQueue(serverId, this.queue)
     }
 
     updateBdIndex = async () => {
-        this.updateChannel()
+        const serverId = super.getChannel!.guild.id
+        const values = { index: this.index }
 
-        try {
-            const filter = { serverId: this.currentChannel!.guild.id }
-            const value = { index: this.index, play: true }
-    
-            await MongoUpdateOne('voiceChannels', filter, value)
-    
-        } catch (error) {
-            console.log(error)
-            SendError('update BdIndex', error)
-        }
+        await updateServer(serverId, values)
     }
 
     updateBdPaused = async () => {
-        this.updateChannel()
+        const serverId = super.getChannel!.guild.id
+        const values = { paused: this.paused }
 
-        try {
-            const filter = { serverId: this.currentChannel!.guild.id }
-            const value = { paused: this.paused }
-    
-            await MongoUpdateOne('voiceChannels', filter, value)
-    
-        } catch (error) {
-            console.log(error)
-            SendError('update BdPaused', error)
-        }
+        await updateServer(serverId, values)
     }
 
 
     //Queue
     set setQueue(queue:VideoBd[]) {
         this.queue = queue
-
-        if(!this.currentChannel) this.updateChannel()
-
-        if(this.eventChannel === this.currentChannel && this.watchEvent !== undefined){
-            //Remove events if the queue is from the same channel
-            
-            this.watchEvent.removeAllListeners("change")
-            this.watchEvent.close()
-        }
-        
-        this.watchChannel()
         this.insertBdChannel()
     }
 
@@ -197,23 +110,19 @@ class QueueClass{
         return this.queue
     }
 
-    shuffleQueue(){
-        this.queue = this.queue
-        .map((a) => ({sort: Math.random(), value: a}))
-        .sort((a, b) => a.sort - b.sort)
-        .map((a) => {
-            return a.value
-        })
+    async shuffleQueue(){
+        const serverId = super.getChannel!.guild.id
         this.index = 0
-        this.insertBdChannel()
+        this.queue = await getShuffleQueue(serverId)
+        playCurrentMusic(this)
     }
 
     clearQueue(){
         this.setIndex = 0
         this.setQueue = []
         this.setPaused = false
-        if(currentVoiceChannel !== undefined){
-            currentVoiceChannel.endDispatcher()
+        if(super.getDispatcher !== undefined){
+            super.endDispatcher()
         }
     }
 
@@ -251,16 +160,58 @@ class QueueClass{
         return this.time
     }
 
-    //Channel
-    updateChannel(){
-        this.currentChannel = currentVoiceChannel.getChannel
-    }
-
     //paused
     set setPaused(paused:boolean){
         this.paused = paused
+        super.pause()
         this.updateBdPaused()
+    }
+
+    get isPaused(){ 
+        return this.paused
+    }
+
+    //Functions
+    updateEmbed(){
+        const messageEmbed = this.currentEmbedMessage
+
+        if(messageEmbed){
+            messageEmbed.edit(this.getCurrentEmbed())
+        }
+    }
+
+    getCurrentEmbed(){
+        const { author, title, url, image} = this.queue[this.index]
+        
+        this.currentEmbed = new Discord.MessageEmbed()
+        .setColor("#0099ff")
+        .setAuthor(`Current playing Song ${this.index+1} from ${author}`)
+        .setTitle(title)
+        .setURL(url!)
+        .setThumbnail(image || 'https://cdn.discordapp.com/attachments/780268482519892009/823628073782083594/83372180_p0_master1200.png')
+        
+        return this.currentEmbed
+    }
+
+    sendCurrentEmbed(channel:TextChannel | DMChannel | NewsChannel){
+        channel.send(this.getCurrentEmbed()).then(message => {
+            this.currentEmbedMessage = message
+        })
     }
 }
 
-export const currentQueue = new QueueClass()
+export const getCurrentQueue = (serverId:string) => {
+    const index = serverIdArray.indexOf(serverId)
+    if(index !== -1 ) return classArray[index]
+    const currentQueue = new QueueClass()
+    
+    serverIdArray.push(serverId)
+    classArray.push(currentQueue)
+    return currentQueue
+}
+
+export const updateCurrentQueue = (serverId:string, newClass:QueueClass) => {
+    const index = serverIdArray.indexOf(serverId)
+    if(index === -1 ) return SendError('updateCurrentQueue', `could not find the serverId, ${serverId}`)
+    classArray[index] = newClass
+}

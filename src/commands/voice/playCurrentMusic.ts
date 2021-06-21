@@ -1,14 +1,18 @@
 import ytdl, { Filter } from 'ytdl-core'
-import { currentVoiceChannel } from '../commandClasses'
 import { URL } from 'url'
-import { currentQueue } from '../queueClass'
+import type { QueueClass } from '../queueClass';
 
-export const playCurrentMusic = () => {
-    const connection = currentVoiceChannel.getConnection
+const COOKIES = process.env.COOKIES
+
+export const playCurrentMusic = (currentQueue:QueueClass) => {
+    const connection = currentQueue.getConnection
     const queue = currentQueue.getQueue
     const index = currentQueue.getIndex
     let time = currentQueue.getTime.toString()
     let filter:Filter = "audio"
+
+    if(currentQueue.isPaused) currentQueue.setPaused = false
+    currentQueue.updateEmbed()
     
     //console.log("index: "+index+" length: "+queue.length)
     //console.log('index++ '+ (index+1))
@@ -25,16 +29,25 @@ export const playCurrentMusic = () => {
 		filter = 'audioonly'
 	}
     
-    const stream = ytdl(videoUrl, { begin: `${time}s`, filter: filter, quality: 'highestaudio', highWaterMark: 1 << 25});
+    const stream = ytdl(videoUrl, { 
+        begin: `${time}s`, 
+        filter: filter, 
+        quality: 'highestaudio', 
+        highWaterMark: 1 << 25,
+        requestOptions: {
+            headers: {
+                cookie: COOKIES
+            }
+        }
+    });
     const dispatcher = connection.play(stream)
-    currentVoiceChannel.setDispatcher = dispatcher
-    currentVoiceChannel.setMusicStatus = title
+    currentQueue.setDispatcher = dispatcher
 
     dispatcher.on('finish',() => {
         let newIndex = currentQueue.getIndex+1
         if(newIndex < currentQueue.getQueue.length){
             currentQueue.setIndex = newIndex
-            playCurrentMusic()
+            playCurrentMusic(currentQueue)
         }
     })
 

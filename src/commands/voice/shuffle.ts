@@ -1,9 +1,9 @@
 import { Message } from 'discord.js';
 import { getCheckEmote, getErrorEmote, getNickname } from './../../utils/utils';
 import { playCurrentMusic } from './playCurrentMusic';
-import { currentQueue } from './../queueClass';
+import type { QueueClass } from '../queueClass';
 
-export const shuffle = async (message:Message) => {
+export const shuffle = async (message:Message, currentQueue:QueueClass) => {
     const { channel, author } = message
     const { length } = currentQueue.getQueue
     if(length === 0){
@@ -12,11 +12,11 @@ export const shuffle = async (message:Message) => {
         return
     }
     if(length === 1){
-        channel.send(`You know i need two sounds to shuffle right?`)
+        channel.send(`You know i need at least two sounds to shuffle right?`)
         message.react(getErrorEmote())
         return
     }
     currentQueue.shuffleQueue()
     message.react(getCheckEmote(message))
-    playCurrentMusic()
+    playCurrentMusic(currentQueue)
 }
