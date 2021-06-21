@@ -16,7 +16,7 @@ const { TOKEN } = process.env;
 export const client = new Discord.Client()
 
 client.once('ready', async () => {
-    console.log('Ready!')
+    console.log('Ready!');
 });
 
 client.on('message', async message => {
