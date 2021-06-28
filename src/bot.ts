@@ -1,11 +1,11 @@
-import Discord from 'discord.js'
+import { TextChannel, WSEventType, Client } from 'discord.js'
 
 import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'
-import { searchWaiting, isVoiceCommand } from './commands/handleVoiceCommands'
+import { isVoiceCommand, searchWaiting } from './commands/handleVoiceCommands'
 import { isAdminCommand } from './commands/handleAdminCommands'
-import { searchObj } from './commands/commandClasses'
 import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
+import { searchObj } from './commands/commandClasses'
 
 import { handlePixivUrl } from './commands/text/pixivUrl'
 
@@ -13,11 +13,26 @@ import { getConfig } from './utils/api/fubuki/config'
 import { updateUser } from './utils/api/fubuki/users'
 
 const { TOKEN } = process.env;
-export const client = new Discord.Client()
+export const client = new Client()
+
+type WsEvents = WSEventType & 'INTERACTION_CREATE'
 
 client.once('ready', async () => {
     console.log('Ready!');
 });
+
+client.ws.on('INTERACTION_CREATE' as WsEvents, async ({ data, channel_id, guild_id, member, user:userDm, id, token }:Interaction) => {
+    
+    if(!data) return
+    if(userDm) {
+        //DM
+        return
+    }
+
+    const channel = await client.channels.fetch(channel_id!) as TextChannel
+    const guild = await client.guilds.fetch(guild_id!)
+    const user = await client.users.fetch(member!.user.id)
+})
 
 client.on('message', async message => {
     const configData = await getConfig()

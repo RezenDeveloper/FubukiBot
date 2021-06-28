@@ -59,3 +59,10 @@ interface ChannelDetails {
     index: number
     volume: number
 }
+
+interface SlashCommand {
+    data: InteractionData;
+    channel: TextChannel;
+    guild: Guild;
+    user: Discord.User;
+}
