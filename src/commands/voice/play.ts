@@ -1,7 +1,6 @@
 import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
 import type { QueueClass } from '../queueClass';
 import { getCheckEmote, getErrorEmote, getPlaylistId, SendError } from '../../utils/utils'
-import { SearchVideo, getVideoInfo, getPlaylist } from '../../utils/api/ytSearch' 
 import ytdl from 'ytdl-core'
 import { playCurrentMusic } from './playCurrentMusic';
 import { URL } from 'url'
