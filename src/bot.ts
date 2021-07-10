@@ -10,7 +10,7 @@ import { searchObj } from './commands/commandClasses'
 import { handlePixivUrl } from './commands/text/pixivUrl'
 
 import { getConfig } from './utils/api/fubuki/config'
-import { updateUser } from './utils/api/fubuki/users'
+import { updateUserChannel } from './utils/api/fubuki/user'
 import { sendErrorMessage } from './utils/utils'
 
 const { TOKEN } = process.env
@@ -62,7 +62,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   const currentChannel = newState.channelID || ''
 
   if (userId) {
-    updateUser(userId, { currentChannel })
+    updateUserChannel(userId, currentChannel)
   }
 
   if (currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === currentChannel) {

@@ -23,82 +23,43 @@ export const serverExists = async (serverId: string) => {
   }
 }
 
-interface serverValues {
-  serverIcon?: string | null
-  serverName?: string
-  channelName?: string
-  channelId?: string
-  index?: number
-  paused?: boolean
-  volume?: number
-}
-
-export const updateServer = async (serverId: string, variables: serverValues) => {
+export const updateServer = async (serverId: string, channelId: string) => {
   try {
     const { data } = await apolloClient.mutate({
       mutation: gql`
-        mutation (
-          $serverId: String!
-          $channelId: String
-          $serverIcon: String
-          $serverName: String
-          $channelName: String
-          $index: Int
-          $paused: Boolean
-          $volume: Float
-        ) {
-          updateServer(
-            serverId: $serverId
-            channelId: $channelId
-            serverIcon: $serverIcon
-            serverName: $serverName
-            channelName: $channelName
-            index: $index
-            paused: $paused
-            volume: $volume
-          ) {
+        mutation ($serverId: String!, $channelId: String!) {
+          updateServerChannel(serverId: $serverId, channelId: $channelId) {
             serverId
           }
         }
       `,
       variables: {
         serverId,
-        ...variables,
+        channelId,
       },
     })
-
-    return data.updateServer.serverId!! as Boolean
+    return {
+      updated: true,
+    }
   } catch (error) {
-    return null
+    SendError('updateServer', error)
+    return {
+      updated: false,
+    }
   }
 }
 
 interface ServerInsertValues {
   serverId: string
-  serverName: string
-  serverIcon: string | null
   channelId: string
-  channelName: string
 }
 
 export const insertServer = async (variables: ServerInsertValues) => {
   try {
     const { data } = await apolloClient.mutate({
       mutation: gql`
-        mutation (
-          $serverId: String!
-          $serverName: String!
-          $serverIcon: String
-          $channelId: String!
-          $channelName: String!
-        ) {
-          insertServer(
-            serverId: $serverId
-            serverName: $serverName
-            serverIcon: $serverIcon
-            channelId: $channelId
-            channelName: $channelName
-          ) {
+        mutation ($serverId: String!, $channelId: String!) {
+          insertServer(serverId: $serverId, channelId: $channelId) {
             serverId
           }
         }
@@ -106,16 +67,26 @@ export const insertServer = async (variables: ServerInsertValues) => {
       variables,
     })
 
-    return data.insertServer.serverId!! as Boolean
+    return {
+      created: true,
+    }
   } catch (error) {
-    return null
+    const exists = error.message.includes('already exists') as boolean
+
+    if (exists) {
+      return {
+        exists,
+      }
+    }
+
+    SendError('insertServer', error)
   }
 }
 
 interface watchResponse {
   serverId: string
-  type: 'PUSH_ONE_VIDEO' | 'PLAY_ONE_VIDEO'
-  channel: Channel
+  type: SubscriptionTypes
+  channel: ChannelSubscription
 }
 
 export const watchServer = async (serverId: string, onNext: (data: watchResponse) => void) => {
@@ -128,18 +99,6 @@ export const watchServer = async (serverId: string, onNext: (data: watchResponse
               serverId
               type
               channel {
-                queue {
-                  title
-                  url
-                  description
-                  image
-                  seconds
-                  publishedAt
-                  author
-                  isLive
-                  status
-                  index
-                }
                 queueLenght
                 lastPage
                 page

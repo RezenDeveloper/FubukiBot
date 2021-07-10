@@ -2,29 +2,6 @@ import gql from 'graphql-tag'
 import { SendError } from '../../utils'
 import { apolloClient } from './fubuki'
 
-export const updateQueue = async (serverId: string, queue: VideoApi[]) => {
-  try {
-    const { data } = await apolloClient.mutate({
-      mutation: gql`
-        mutation ($serverId: String!, $queue: [QueueInsertInput!]!) {
-          updateFullQueue(serverId: $serverId, queue: $queue) {
-            title
-          }
-        }
-      `,
-      variables: {
-        serverId,
-        queue,
-      },
-    })
-
-    return data.updateFullQueue.length!! as Boolean
-  } catch (error) {
-    SendError('GraphQl updateQueue', error)
-    return null
-  }
-}
-
 export const insertOneVideo = async (serverId: string, url: string, push = false) => {
   try {
     const { data } = await apolloClient.mutate({
@@ -87,37 +64,6 @@ export const insertPlaylist = async (serverId: string, url: string, push = false
   }
 }
 
-export const getShuffleQueue = async (serverId: string) => {
-  try {
-    const { data } = await apolloClient.mutate({
-      mutation: gql`
-        mutation ($serverId: String!) {
-          shuffleQueue(serverId: $serverId) {
-            title
-            url
-            description
-            image
-            seconds
-            publishedAt
-            author
-            isLive
-            status
-            index
-          }
-        }
-      `,
-      variables: {
-        serverId,
-      },
-    })
-
-    return data.shuffleQueue as VideoBd[]
-  } catch (error) {
-    console.log(error)
-    return []
-  }
-}
-
 export const clearQueue = async (serverId: string) => {
   try {
     const { data } = await apolloClient.mutate({
@@ -144,6 +90,75 @@ export const clearQueue = async (serverId: string) => {
     return data.clearQueue as Music
   } catch (error) {
     SendError('GraphQl clearQueue', error)
+    return null
+  }
+}
+
+export interface QueueControls {
+  index?: number
+  volume?: number
+  paused?: boolean
+}
+
+export const updateQueueControls = async (serverId: string, variables: QueueControls) => {
+  try {
+    const { data } = await apolloClient.mutate({
+      mutation: gql`
+        mutation ($serverId: String, $paused: Boolean, $volume: Float, $index: Int) {
+          updateControls(serverId: $serverId, paused: $paused, volume: $volume, index: $index) {
+            index
+            paused
+            volume
+          }
+        }
+      `,
+      variables: {
+        serverId,
+        ...variables,
+      },
+    })
+
+    return {
+      updated: true,
+    }
+  } catch (error) {
+    SendError('updateQueueControls', error)
+    return {
+      updated: false,
+    }
+  }
+}
+
+export const getQueuePage = async (channelId: string, page: number) => {
+  try {
+    const { data } = await apolloClient.query({
+      query: gql`
+        query ($channelId: String, $page: Int!) {
+          getPagedQueue(channelId: $channelId, page: $page) {
+            queue {
+              title
+              url
+              description
+              image
+              seconds
+              publishedAt
+              author
+              isLive
+              status
+              index
+            }
+          }
+        }
+      `,
+      variables: {
+        channelId,
+        page,
+      },
+    })
+
+    return data.getPagedQueue.queue as Music[]
+  } catch (error) {
+    SendError('getQueuePage', error)
     return null
   }
 }

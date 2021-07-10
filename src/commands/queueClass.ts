@@ -1,24 +1,25 @@
 import { DMChannel, NewsChannel, TextChannel, VoiceChannel } from 'discord.js'
 import { ChangeStream } from 'mongodb'
-import { SendError } from '../utils/utils'
+import { SendError, sendErrorMessage } from '../utils/utils'
 import { VoiceChannelClass } from './commandClasses'
 import { playCurrentMusic } from './voice/playCurrentMusic'
 import Discord from 'discord.js'
 import { insertServer, serverExists, updateServer, watchServer } from '../utils/api/fubuki/server'
-import { getShuffleQueue, updateQueue } from '../utils/api/fubuki/queue'
+import { getQueuePage, QueueControls, updateQueueControls } from '../utils/api/fubuki/queue'
 
 const classArray: QueueClass[] = []
 const serverIdArray: string[] = []
 
 export class QueueClass extends VoiceChannelClass {
+  private shuffle: boolean
+  private currentEmbed?: Discord.MessageEmbed
+  private currentEmbedMessage?: Discord.Message
   private queue: Music[]
   private index: number
   private page: number
-  private lenght: number
   private time: number
   private paused: boolean
-  private currentEmbed?: Discord.MessageEmbed
-  private currentEmbedMessage?: Discord.Message
+  private lenght: number
 
   constructor() {
     super()
@@ -27,6 +28,7 @@ export class QueueClass extends VoiceChannelClass {
     this.page = 0
     this.index = 0
     this.time = 0
+    this.shuffle = false
     this.paused = super.getDispatcher?.paused !== undefined ? super.getDispatcher?.paused : false
   }
 
@@ -34,25 +36,29 @@ export class QueueClass extends VoiceChannelClass {
 
   startWatch = async () => {
     const serverId = super.getChannel!.guild.id
-    super.setSubscription = await watchServer(serverId, ({ channel, type }) => {
+    const channelId = super.getChannel!.id
+    console.log('watching')
+    super.setSubscription = await watchServer(serverId, async ({ channel, type }) => {
       console.log({ type, channel })
 
       if (channel !== null) {
-        const { queue, queueLenght, lastPage, page, controls } = channel
-        this.lenght = queueLenght
+        const { queueLenght, lastPage, page, controls } = channel
 
-        if (type === 'PUSH_ONE_VIDEO') {
-          this.queue = [...this.queue, ...queue]
-        }
-        if (type === 'PLAY_ONE_VIDEO') {
-          this.queue = queue
+        if (page !== null) {
+          this.lenght = queueLenght!
+          this.page = page
+          const newQueue = await getQueuePage(channelId, page)
+          if (!newQueue) return
+
+          this.queue = newQueue
         }
 
-        if (controls) {
+        if (controls !== null) {
           const { index, paused, volume, play } = controls
           if (index !== null) {
-            this.index = index
-            this.page = page
+            this.index = index % 10
+            this.time = 0
+            if (page !== null) this.page = page
           }
           if (paused !== null) this.paused = paused
           if (volume !== null) this.setVolume = volume
@@ -64,98 +70,49 @@ export class QueueClass extends VoiceChannelClass {
     })
   }
 
-  insertBdChannel = async () => {
+  updateControls = async (controls: QueueControls) => {
     const serverId = super.getChannel!.guild.id
-
-    if (await serverExists(serverId)) {
-      await this.updateBdChannel()
-      if (!super.getSubscription) await this.startWatch()
-      return
-    }
-
-    const variables = {
-      serverId: super.getChannel!.guild.id,
-      serverName: super.getChannel!.guild.name,
-      serverIcon: super.getChannel!.guild.iconURL(),
-      channelId: super.getChannel!.id,
-      channelName: super.getChannel!.name,
-    }
-
-    await insertServer(variables)
-    await updateQueue(serverId, this.queue)
-    if (!super.getSubscription) await this.startWatch()
-  }
-
-  updateBdChannel = async () => {
-    const serverId = super.getChannel!.guild.id
-    const values = {
-      serverIcon: super.getChannel!.guild.iconURL(),
-      serverName: super.getChannel!.guild.name,
-      channelName: super.getChannel!.name,
-      channelId: super.getChannel!.id,
-      paused: this.paused,
-      index: this.index,
-      volume: this.getDispatcher?.volume!,
-    }
-
-    await updateServer(serverId, values)
-    await updateQueue(serverId, this.queue)
-  }
-
-  updateBdIndex = async () => {
-    const serverId = super.getChannel!.guild.id
-    const values = { index: this.index }
-
-    await updateServer(serverId, values)
-  }
-
-  updateBdPaused = async () => {
-    const serverId = super.getChannel!.guild.id
-    const values = { paused: this.paused }
-
-    await updateServer(serverId, values)
+    await updateQueueControls(serverId, { ...controls })
   }
 
   //Queue
-  set setQueue(queue: VideoBd[]) {
-    this.queue = queue
-    this.insertBdChannel()
-  }
 
   get getQueue() {
     return this.queue
   }
 
-  async shuffleQueue() {
-    const serverId = super.getChannel!.guild.id
-    this.index = 0
-    this.queue = await getShuffleQueue(serverId)
+  get getLenght() {
+    return this.lenght
+  }
+
+  shuffleMode = (shuffle: boolean) => {
+    this.shuffle = shuffle
     playCurrentMusic(this)
   }
 
   //Index
   set setIndex(index: number) {
-    if (index < this.queue.length && this.queue.length !== 0) {
+    if (index < this.lenght && this.lenght !== 0) {
       this.index = index
       this.time = 0
-      this.updateBdIndex()
+      this.updateControls({ index })
     }
   }
 
   nextIndex() {
-    this.index++
-    this.time = 0
-    this.updateBdIndex()
+    this.updateControls({ index: this.index + 1 })
   }
 
   prevIndex() {
-    this.index--
-    this.time = 0
-    this.updateBdIndex()
+    this.updateControls({ index: this.index - 1 })
   }
 
   get getIndex() {
     return this.index
+  }
+
+  get getPage() {
+    return this.page
   }
 
   //Time
@@ -169,9 +126,7 @@ export class QueueClass extends VoiceChannelClass {
 
   //paused
   set setPaused(paused: boolean) {
-    this.paused = paused
-    super.pause()
-    this.updateBdPaused()
+    this.updateControls({ paused: paused })
   }
 
   get isPaused() {

@@ -4,6 +4,7 @@ import { play, pause, queue, playDirection, shuffle, time, search, clear, leave 
 import { getCurrentQueue } from './queueClass'
 import type { QueueClass } from './queueClass'
 import { getConfig } from '../utils/api/fubuki/config'
+import { insertServer } from '../utils/api/fubuki/server'
 
 export const searchWaiting = async (message: Message) => {
   const currentQueue = getCurrentQueue(message.guild!.id)
@@ -12,6 +13,7 @@ export const searchWaiting = async (message: Message) => {
 
 export const isVoiceCommand = async (message: Message) => {
   const configData = await getConfig()
+  if (!configData) return
   const { content, channel } = message
   const { prefix, voiceCommands } = configData
   let errorMessage = false
@@ -88,8 +90,8 @@ const isOnChannel = (memberChannel: VoiceChannel | null | undefined, needVoice: 
     if (!memberChannel) return resolve(false)
 
     if (!currentQueue.getConnection || (currentQueue.getChannel !== memberChannel && needVoice)) {
-      memberChannel.join().then(connection => {
-        currentQueue.setChannel = memberChannel
+      memberChannel.join().then(async connection => {
+        await currentQueue.setChannel(memberChannel)
         currentQueue.setConnection = connection
         currentQueue.startWatch()
         resolve(true)
