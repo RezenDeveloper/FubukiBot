@@ -40,14 +40,18 @@ export class QueueClass extends VoiceChannelClass {
     console.log('watching')
     super.setSubscription = await watchServer(serverId, async ({ channel, type }) => {
       console.log({ type, channel })
+      const firstVideo = this.queue.length === 0
 
       if (channel !== null) {
         const { queueLenght, lastPage, page, controls } = channel
 
         if (page !== null) {
-          this.lenght = queueLenght!
+          const refetch = page === this.page && queueLenght !== this.getLenght
+          const newQueue = await getQueuePage(channelId, page, refetch)
+
           this.page = page
-          const newQueue = await getQueuePage(channelId, page)
+          this.lenght = queueLenght!
+
           if (!newQueue) return
 
           this.queue = newQueue
@@ -63,8 +67,10 @@ export class QueueClass extends VoiceChannelClass {
           if (paused !== null) this.paused = paused
           if (volume !== null) this.setVolume = volume
 
-          if (play && !this.paused) playCurrentMusic(this)
+          const playable = play || firstVideo
+          if (playable && !this.paused) playCurrentMusic(this)
         }
+
         this.updateEmbed()
       }
     })
@@ -93,8 +99,6 @@ export class QueueClass extends VoiceChannelClass {
   //Index
   set setIndex(index: number) {
     if (index < this.lenght && this.lenght !== 0) {
-      this.index = index
-      this.time = 0
       this.updateControls({ index })
     }
   }

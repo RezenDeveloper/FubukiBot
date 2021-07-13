@@ -45,10 +45,12 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
   currentQueue.setDispatcher = dispatcher
 
   dispatcher.on('finish', () => {
-    let newIndex = currentQueue.getIndex + 1
-    if (newIndex < currentQueue.getQueue.length) {
+    const newIndex = currentQueue.getIndex + 1
+    if (newIndex < currentQueue.getLenght) {
+      console.log('newIndex', newIndex)
       currentQueue.setIndex = newIndex
-      playCurrentMusic(currentQueue)
+    } else {
+      console.log('last index')
     }
   })
 }

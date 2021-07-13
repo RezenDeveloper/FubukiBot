@@ -129,7 +129,7 @@ export const updateQueueControls = async (serverId: string, variables: QueueCont
   }
 }
 
-export const getQueuePage = async (channelId: string, page: number) => {
+export const getQueuePage = async (channelId: string, page: number, refetch: boolean) => {
   try {
     const { data } = await apolloClient.query({
       query: gql`
@@ -154,7 +154,9 @@ export const getQueuePage = async (channelId: string, page: number) => {
         channelId,
         page,
       },
+      fetchPolicy: refetch ? 'network-only' : 'cache-first',
     })
+    console.log(refetch ? 'page fetched' : 'page fetched with cache')
 
     return data.getPagedQueue.queue as Music[]
   } catch (error) {
