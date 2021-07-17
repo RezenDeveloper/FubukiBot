@@ -164,3 +164,41 @@ export const getQueuePage = async (channelId: string, page: number, refetch: boo
     return null
   }
 }
+
+export const getQueueTitle = async (channelId: string, page: number) => {
+  try {
+    const { data } = await apolloClient.query({
+      query: gql`
+        query ($channelId: String, $page: Int!) {
+          getPagedQueue(channelId: $channelId, page: $page) {
+            queue {
+              title
+              index
+            }
+            queueLength
+            lastPage
+            page
+          }
+        }
+      `,
+      variables: {
+        channelId,
+        page,
+      },
+    })
+    interface Response {
+      queue: {
+        title: string
+        index: number
+      }[]
+      queueLength: number
+      lastPage: boolean
+      page: number
+    }
+
+    return data.getPagedQueue as Response
+  } catch (error) {
+    SendError('getQueueTitle', error)
+    return null
+  }
+}

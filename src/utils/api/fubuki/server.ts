@@ -99,7 +99,7 @@ export const watchServer = async (serverId: string, onNext: (data: watchResponse
               serverId
               type
               channel {
-                queueLenght
+                queueLength
                 lastPage
                 page
                 controls {

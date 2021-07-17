@@ -1,10 +1,10 @@
 import { Message, TextChannel } from 'discord.js'
 import { FieldsEmbed } from 'discord-paginationembed'
-import { playCurrentMusic } from './playCurrentMusic'
 import { getCheckEmote, getErrorEmote } from '../../utils/utils'
 import type { QueueClass } from '../queueClass'
+import { getQueueTitle } from '../../utils/api/fubuki/queue'
 
-export const queue = (message: Message, currentQueue: QueueClass) => {
+export const queue = async (message: Message, currentQueue: QueueClass) => {
   const { channel, content } = message
   const currentQueueArray = currentQueue.getQueue
 
@@ -16,29 +16,47 @@ export const queue = (message: Message, currentQueue: QueueClass) => {
   const number = parseFloat(content.split(' ')[1])
 
   if (!number) {
-    //console.log(queue_global)
     const QueueEmbed = new FieldsEmbed()
     QueueEmbed.embed.setColor('#0099ff')
     QueueEmbed.embed.setTitle('Current Queue')
     QueueEmbed.setChannel(channel as TextChannel)
     QueueEmbed.setElementsPerPage(10)
     QueueEmbed.setAuthorizedUsers([])
-    QueueEmbed.setArray(
-      currentQueueArray.map((_, index) => {
-        return index + 1
-      })
-    )
+    QueueEmbed.setArray(currentQueueArray)
+
+    QueueEmbed.embed.setFooter(`Page 1 of ${Math.floor(currentQueue.getLength / 10) + 1}`)
     QueueEmbed.formatField('Musics', i => {
-      return `**Song ${i}** -- ${currentQueueArray[(i as number) - 1].title}`
+      const { index, title } = i as Music
+      return `**Song ${index + 1}** -- ${title}`
     })
-    QueueEmbed.setDisabledNavigationEmojis(['delete', 'jump'])
+    QueueEmbed.setDisabledNavigationEmojis(['all'])
     QueueEmbed.setTimeout(0)
+    QueueEmbed.setFunctionEmojis({
+      '⬅️': async (user, instance) => {
+        const data = await getQueueTitle(currentQueue.getChannel!.id, QueueEmbed.page - 1)
+        if (!data) return
+        const { queue, page } = data
+        QueueEmbed.setPage('back')
+        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(currentQueue.getLength / 10) + 1}`)
+        QueueEmbed.setArray(queue)
+      },
+      '➡️': async (user, instance) => {
+        const data = await getQueueTitle(currentQueue.getChannel!.id, QueueEmbed.page)
+        if (!data) return
+        const { queue, page } = data
+        console.log(data)
+        QueueEmbed.setPage('forward')
+        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(currentQueue.getLength / 10) + 1}`)
+        QueueEmbed.setArray(queue)
+      },
+    })
     QueueEmbed.build()
+
     setTimeout(() => {
       currentQueue.sendCurrentEmbed(channel)
     }, 1000)
   } else {
-    if (number <= currentQueue.getLenght && number > 0) {
+    if (number <= currentQueue.getLength && number > 0) {
       currentQueue.setIndex = number - 1
       message.react(getCheckEmote(message))
     } else {

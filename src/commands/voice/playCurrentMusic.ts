@@ -46,7 +46,7 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
 
   dispatcher.on('finish', () => {
     const newIndex = currentQueue.getIndex + 1
-    if (newIndex < currentQueue.getLenght) {
+    if (newIndex < currentQueue.getLength) {
       console.log('newIndex', newIndex)
       currentQueue.setIndex = newIndex
     } else {

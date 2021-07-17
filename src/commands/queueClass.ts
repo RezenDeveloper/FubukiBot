@@ -19,12 +19,12 @@ export class QueueClass extends VoiceChannelClass {
   private page: number
   private time: number
   private paused: boolean
-  private lenght: number
+  private length: number
 
   constructor() {
     super()
     this.queue = []
-    this.lenght = 0
+    this.length = 0
     this.page = 0
     this.index = 0
     this.time = 0
@@ -43,14 +43,14 @@ export class QueueClass extends VoiceChannelClass {
       const firstVideo = this.queue.length === 0
 
       if (channel !== null) {
-        const { queueLenght, lastPage, page, controls } = channel
+        const { queueLength, lastPage, page, controls } = channel
 
         if (page !== null) {
-          const refetch = page === this.page && queueLenght !== this.getLenght
+          const refetch = page === this.page && queueLength !== this.getLength
           const newQueue = await getQueuePage(channelId, page, refetch)
 
           this.page = page
-          this.lenght = queueLenght!
+          this.length = queueLength!
 
           if (!newQueue) return
 
@@ -87,8 +87,8 @@ export class QueueClass extends VoiceChannelClass {
     return this.queue
   }
 
-  get getLenght() {
-    return this.lenght
+  get getLength() {
+    return this.length
   }
 
   shuffleMode = (shuffle: boolean) => {
@@ -98,7 +98,7 @@ export class QueueClass extends VoiceChannelClass {
 
   //Index
   set setIndex(index: number) {
-    if (index < this.lenght && this.lenght !== 0) {
+    if (index < this.length && this.length !== 0) {
       this.updateControls({ index })
     }
   }

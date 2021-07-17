@@ -5,11 +5,11 @@ import type { QueueClass } from '../queueClass'
 
 export const prev = async (message: Message, currentQueue: QueueClass) => {
   const index = currentQueue.getIndex * currentQueue.getPage
-  const lenght = currentQueue.getLenght
+  const length = currentQueue.getLength
   const { channel } = message
   const name = await getNickname(message)
 
-  if (lenght === 0) {
+  if (length === 0) {
     channel.send(`I can't do that without a queue ${name}!`)
     message.react(getErrorEmote())
     return
@@ -25,16 +25,16 @@ export const prev = async (message: Message, currentQueue: QueueClass) => {
 
 export const next = async (message: Message, currentQueue: QueueClass) => {
   const index = currentQueue.getIndex * currentQueue.getPage
-  const lenght = currentQueue.getLenght
+  const length = currentQueue.getLength
   const { channel } = message
   const name = await getNickname(message)
 
-  if (lenght === 0) {
+  if (length === 0) {
     channel.send(`I can't do that without a queue ${name}!`)
     message.react(getErrorEmote())
     return
   }
-  if (index + 1 < lenght) {
+  if (index + 1 < length) {
     currentQueue.nextIndex()
     message.react(getCheckEmote(message))
   } else {

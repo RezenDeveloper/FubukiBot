@@ -24,7 +24,7 @@ type SubscriptionTypes = 'PUSH_ONE_VIDEO' | 'PLAY_ONE_VIDEO' | 'PLAY_PLAYLIST' |
 
 interface ChannelSubscription {
   page: number | null
-  queueLenght: number | null
+  queueLength: number | null
   lastPage: boolean | null
   controls: {
     play: boolean | null
