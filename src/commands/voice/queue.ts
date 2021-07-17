@@ -24,7 +24,7 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
     QueueEmbed.setAuthorizedUsers([])
     QueueEmbed.setArray(currentQueueArray)
 
-    QueueEmbed.embed.setFooter(`Page 1 of ${Math.floor(currentQueue.getLength / 10) + 1}`)
+    QueueEmbed.embed.setFooter(`Page ${currentQueue.getPage + 1} of ${Math.floor(currentQueue.getLength / 10) + 1}`)
     QueueEmbed.formatField('Musics', i => {
       const { index, title } = i as Music
       return `**Song ${index + 1}** -- ${title}`
@@ -44,7 +44,6 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
         const data = await getQueueTitle(currentQueue.getChannel!.id, QueueEmbed.page)
         if (!data) return
         const { queue, page } = data
-        console.log(data)
         QueueEmbed.setPage('forward')
         QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(currentQueue.getLength / 10) + 1}`)
         QueueEmbed.setArray(queue)

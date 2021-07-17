@@ -53,7 +53,6 @@ export class QueueClass extends VoiceChannelClass {
           this.length = queueLength!
 
           if (!newQueue) return
-
           this.queue = newQueue
         }
 
@@ -104,11 +103,11 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   nextIndex() {
-    this.updateControls({ index: this.index + 1 })
+    this.updateControls({ index: this.getActualIndex() + 1 })
   }
 
   prevIndex() {
-    this.updateControls({ index: this.index - 1 })
+    this.updateControls({ index: this.getActualIndex() - 1 })
   }
 
   get getIndex() {
@@ -138,6 +137,10 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   //Functions
+  getActualIndex() {
+    return this.index + this.page * 10
+  }
+
   updateEmbed() {
     const messageEmbed = this.currentEmbedMessage
 
@@ -148,10 +151,9 @@ export class QueueClass extends VoiceChannelClass {
 
   getCurrentEmbed() {
     const { author, title, url, image } = this.queue[this.index]
-
     this.currentEmbed = new Discord.MessageEmbed()
       .setColor('#0099ff')
-      .setAuthor(`Current playing Song ${this.index + 1} from ${author}`)
+      .setAuthor(`Current playing Song ${this.getActualIndex() + 1} from ${author}`)
       .setTitle(title)
       .setURL(url!)
       .setThumbnail(

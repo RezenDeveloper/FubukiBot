@@ -24,7 +24,7 @@ export const prev = async (message: Message, currentQueue: QueueClass) => {
 }
 
 export const next = async (message: Message, currentQueue: QueueClass) => {
-  const index = currentQueue.getIndex * currentQueue.getPage
+  const index = currentQueue.getActualIndex()
   const length = currentQueue.getLength
   const { channel } = message
   const name = await getNickname(message)
