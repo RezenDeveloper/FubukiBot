@@ -99,6 +99,20 @@ export const watchServer = async (serverId: string, onNext: (data: watchResponse
               serverId
               type
               channel {
+                __typename
+                queue {
+                  __typename
+                  title
+                  url
+                  description
+                  image
+                  seconds
+                  publishedAt
+                  author
+                  isLive
+                  status
+                  index
+                }
                 queueLength
                 lastPage
                 page

@@ -129,27 +129,29 @@ export const updateQueueControls = async (serverId: string, variables: QueueCont
   }
 }
 
+export const GET_PAGED_QUEUE = gql`
+  query ($channelId: String, $page: Int!) {
+    getPagedQueue(channelId: $channelId, page: $page) {
+      queue {
+        __typename
+        title
+        url
+        description
+        image
+        seconds
+        publishedAt
+        author
+        isLive
+        status
+        index
+      }
+    }
+  }
+`
 export const getQueuePage = async (channelId: string, page: number, refetch: boolean) => {
   try {
     const { data } = await apolloClient.query({
-      query: gql`
-        query ($channelId: String, $page: Int!) {
-          getPagedQueue(channelId: $channelId, page: $page) {
-            queue {
-              title
-              url
-              description
-              image
-              seconds
-              publishedAt
-              author
-              isLive
-              status
-              index
-            }
-          }
-        }
-      `,
+      query: GET_PAGED_QUEUE,
       variables: {
         channelId,
         page,
@@ -165,22 +167,23 @@ export const getQueuePage = async (channelId: string, page: number, refetch: boo
   }
 }
 
+const GET_QUEUE_TITLE = gql`
+  query ($channelId: String, $page: Int!) {
+    getPagedQueue(channelId: $channelId, page: $page) {
+      queue {
+        title
+        index
+      }
+      queueLength
+      lastPage
+      page
+    }
+  }
+`
 export const getQueueTitle = async (channelId: string, page: number) => {
   try {
     const { data } = await apolloClient.query({
-      query: gql`
-        query ($channelId: String, $page: Int!) {
-          getPagedQueue(channelId: $channelId, page: $page) {
-            queue {
-              title
-              index
-            }
-            queueLength
-            lastPage
-            page
-          }
-        }
-      `,
+      query: GET_QUEUE_TITLE,
       variables: {
         channelId,
         page,
@@ -198,6 +201,7 @@ export const getQueueTitle = async (channelId: string, page: number) => {
 
     return data.getPagedQueue as Response
   } catch (error) {
+    if (error.graphQLErrors[0].message === 'INVALID_PAGE') return
     SendError('getQueueTitle', error)
     return null
   }

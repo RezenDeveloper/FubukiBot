@@ -23,9 +23,10 @@ interface Playlist {
 type SubscriptionTypes = 'PUSH_ONE_VIDEO' | 'PLAY_ONE_VIDEO' | 'PLAY_PLAYLIST' | 'PUSH_PLAYLIST' | 'UPDATE_CONTROLS'
 
 interface ChannelSubscription {
-  page: number | null
-  queueLength: number | null
-  lastPage: boolean | null
+  queue: Music[]
+  page: number
+  queueLength: number
+  lastPage: boolean
   controls: {
     play: boolean | null
     paused: boolean | null

@@ -2,9 +2,9 @@ import { Message, TextChannel } from 'discord.js'
 // import { SearchVideo } from '../../utils/api/ytSearch';
 import { FieldsEmbed } from 'discord-paginationembed'
 import { getNickname, SendError } from './../../utils/utils'
-import { searchObj } from './../commandClasses'
+import { searchObj } from '../classes/commandClasses'
 import { playCurrentMusic } from './playCurrentMusic'
-import type { QueueClass } from '../queueClass'
+import type { QueueClass } from '../classes/queueClass'
 
 export const search = async (message: Message, currentQueue: QueueClass, waiting?: boolean) => {
   const { content, channel, author } = message

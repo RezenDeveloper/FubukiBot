@@ -4,8 +4,8 @@ import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'
 import { isVoiceCommand, searchWaiting } from './commands/handleVoiceCommands'
 import { isAdminCommand } from './commands/handleAdminCommands'
-import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
-import { searchObj } from './commands/commandClasses'
+import { getCurrentQueue, updateCurrentQueue } from './commands/classes/queueClass'
+import { searchObj } from './commands/classes/commandClasses'
 
 import { handlePixivUrl } from './commands/text/pixivUrl'
 

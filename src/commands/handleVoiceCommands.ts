@@ -1,8 +1,8 @@
 import { Message, VoiceChannel } from 'discord.js'
 import { getNickname, hasCommands } from '../utils/utils'
 import { play, pause, queue, playDirection, shuffle, time, search, clear, leave } from './voice/getVoiceCommands'
-import { getCurrentQueue } from './queueClass'
-import type { QueueClass } from './queueClass'
+import { getCurrentQueue } from './classes/queueClass'
+import type { QueueClass } from './classes/queueClass'
 import { getConfig } from '../utils/api/fubuki/config'
 import { insertServer } from '../utils/api/fubuki/server'
 

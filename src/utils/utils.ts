@@ -1,7 +1,6 @@
 import { Channel, EmojiResolvable, Message, TextChannel, User } from 'discord.js'
 import { client } from '../bot'
 import { URL } from 'url'
-import { getUserNickName } from './api/fubuki/users'
 
 export const hasCommands = (
   commandArray: Icommand[] | IcommandVoice[],
@@ -113,4 +112,14 @@ export const truncate = (str: string, n: number) => {
 
 export const bytesToMb = (bytes: number) => {
   return bytes / (1024 * 1024)
+}
+
+export const handleAsyncFunc = async <T>(callback: () => Promise<T>) => {
+  try {
+    return {
+      data: await callback(),
+    }
+  } catch (error) {
+    return { error }
+  }
 }

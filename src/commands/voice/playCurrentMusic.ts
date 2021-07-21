@@ -1,6 +1,6 @@
 import ytdl, { Filter } from 'ytdl-core'
 import { URL } from 'url'
-import type { QueueClass } from '../queueClass'
+import type { QueueClass } from '../classes/queueClass'
 
 const COOKIES = process.env.COOKIES
 

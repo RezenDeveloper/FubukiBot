@@ -1,5 +1,5 @@
 import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
-import type { QueueClass } from '../queueClass'
+import type { QueueClass } from '../classes/queueClass'
 import { getCheckEmote, getErrorEmote, getPlaylistId, SendError, sendErrorMessage } from '../../utils/utils'
 import ytdl from 'ytdl-core'
 import { playCurrentMusic } from './playCurrentMusic'

@@ -1,6 +1,6 @@
 import { StreamDispatcher, VoiceChannel, VoiceConnection } from 'discord.js'
-import { insertServer, updateServer } from '../utils/api/fubuki/server'
-import { SendError, truncate } from '../utils/utils'
+import { insertServer, updateServer } from '../../utils/api/fubuki/server'
+import { SendError, truncate } from '../../utils/utils'
 
 export class VoiceChannelClass {
   private channel?: VoiceChannel
