@@ -4,13 +4,7 @@ import { VoiceChannelClass } from './commandClasses'
 import { playCurrentMusic } from '../voice/playCurrentMusic'
 import Discord from 'discord.js'
 import { insertServer, serverExists, updateServer, watchServer } from '../../utils/api/fubuki/server'
-import {
-  getQueuePage,
-  getQueueTitle,
-  GET_PAGED_QUEUE,
-  QueueControls,
-  updateQueueControls,
-} from '../../utils/api/fubuki/queue'
+import { getQueueTitle, GET_QUEUE_TITLE, QueueControls, updateQueueControls } from '../../utils/api/fubuki/queue'
 import { FieldsEmbed } from 'discord-paginationembed'
 import { apolloClient } from '../../utils/api/fubuki/fubuki'
 import gql from 'graphql-tag'
@@ -30,6 +24,7 @@ export class QueueClass extends VoiceChannelClass {
   private paused: boolean
   private length: number
   private queuePage: number
+  private queueId: string
 
   constructor() {
     super()
@@ -41,6 +36,7 @@ export class QueueClass extends VoiceChannelClass {
     this.shuffle = false
     this.paused = super.getDispatcher?.paused !== undefined ? super.getDispatcher?.paused : false
     this.queuePage = 0
+    this.queueId = ''
   }
 
   //DataBase
@@ -54,27 +50,28 @@ export class QueueClass extends VoiceChannelClass {
       const firstVideo = this.queue.length === 0
 
       if (!channel) return
-      const { queueLength, lastPage, page, controls, queue } = channel
+      const { queueLength, queueId, lastPage, page, controls, queue } = channel
 
       // const refetch = page === this.page && queueLength !== this.getLength
       // const newQueue = await getQueuePage(channelId, page, refetch)
 
       const variables = {
         channelId,
+        queueId,
         page,
       }
 
-      const { data: cache, error } = await handleAsyncFunc<any>(async () => {
-        apolloClient.cache.readQuery({
-          query: GET_PAGED_QUEUE,
-          variables,
-        })
-      })
+      // const { data: cache, error } = await handleAsyncFunc<any>(async () => {
+      //   apolloClient.cache.readQuery({
+      //     query: GET_PAGED_QUEUE,
+      //     variables,
+      //   })
+      // })
 
       if (type !== 'UPDATE_CONTROLS') {
         this.queue = queue
         await apolloClient.cache.writeQuery({
-          query: GET_PAGED_QUEUE,
+          query: GET_QUEUE_TITLE,
           data: {
             getPagedQueue: {
               __typename: 'PagedQueue',
@@ -89,6 +86,7 @@ export class QueueClass extends VoiceChannelClass {
       }
 
       this.page = page
+      this.queueId = queueId
       this.length = queueLength
 
       // if (!newQueue) return
@@ -229,7 +227,7 @@ export class QueueClass extends VoiceChannelClass {
     QueueEmbed.setFunctionEmojis({
       '⬅️': async (user, instance) => {
         console.log('queuePage', this.queuePage - 1)
-        const data = await getQueueTitle(this.getChannel!.id, this.queuePage - 1)
+        const data = await getQueueTitle(this.getChannel!.id, this.queueId, this.queuePage - 1)
         if (!data) return
         const { queue, page } = data
         this.queuePage--
@@ -238,7 +236,7 @@ export class QueueClass extends VoiceChannelClass {
       },
       '➡️': async (user, instance) => {
         console.log('queuePage', this.queuePage + 1)
-        const data = await getQueueTitle(this.getChannel!.id, this.queuePage + 1)
+        const data = await getQueueTitle(this.getChannel!.id, this.queueId, this.queuePage + 1)
         if (!data) return
         const { queue, page } = data
         this.queuePage++

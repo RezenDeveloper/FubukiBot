@@ -99,9 +99,7 @@ export const watchServer = async (serverId: string, onNext: (data: watchResponse
               serverId
               type
               channel {
-                __typename
                 queue {
-                  __typename
                   title
                   url
                   description
@@ -113,6 +111,7 @@ export const watchServer = async (serverId: string, onNext: (data: watchResponse
                   status
                   index
                 }
+                queueId
                 queueLength
                 lastPage
                 page

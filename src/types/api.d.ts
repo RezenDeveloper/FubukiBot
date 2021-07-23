@@ -24,6 +24,7 @@ type SubscriptionTypes = 'PUSH_ONE_VIDEO' | 'PLAY_ONE_VIDEO' | 'PLAY_PLAYLIST' |
 
 interface ChannelSubscription {
   queue: Music[]
+  queueId: string
   page: number
   queueLength: number
   lastPage: boolean

@@ -129,7 +129,7 @@ export const updateQueueControls = async (serverId: string, variables: QueueCont
   }
 }
 
-export const GET_PAGED_QUEUE = gql`
+const GET_PAGED_QUEUE = gql`
   query ($channelId: String, $page: Int!) {
     getPagedQueue(channelId: $channelId, page: $page) {
       queue {
@@ -167,9 +167,9 @@ export const getQueuePage = async (channelId: string, page: number, refetch: boo
   }
 }
 
-const GET_QUEUE_TITLE = gql`
-  query ($channelId: String, $page: Int!) {
-    getPagedQueue(channelId: $channelId, page: $page) {
+export const GET_QUEUE_TITLE = gql`
+  query ($channelId: String, $queueId: String, $page: Int!) {
+    getPagedQueue(channelId: $channelId, page: $page, queueId: $queueId) {
       queue {
         title
         index
@@ -180,13 +180,14 @@ const GET_QUEUE_TITLE = gql`
     }
   }
 `
-export const getQueueTitle = async (channelId: string, page: number) => {
+export const getQueueTitle = async (channelId: string, queueId: string, page: number) => {
   try {
     const { data } = await apolloClient.query({
       query: GET_QUEUE_TITLE,
       variables: {
         channelId,
         page,
+        queueId,
       },
     })
     interface Response {
