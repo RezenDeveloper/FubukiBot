@@ -52,24 +52,7 @@ export class QueueClass extends VoiceChannelClass {
       if (!channel) return
       const { queueLength, queueId, lastPage, page, controls, queue } = channel
 
-      // const refetch = page === this.page && queueLength !== this.getLength
-      // const newQueue = await getQueuePage(channelId, page, refetch)
-
-      const variables = {
-        channelId,
-        queueId,
-        page,
-      }
-
-      // const { data: cache, error } = await handleAsyncFunc<any>(async () => {
-      //   apolloClient.cache.readQuery({
-      //     query: GET_PAGED_QUEUE,
-      //     variables,
-      //   })
-      // })
-
-      if (type !== 'UPDATE_CONTROLS') {
-        this.queue = queue
+      if (queue) {
         await apolloClient.cache.writeQuery({
           query: GET_QUEUE_TITLE,
           data: {
@@ -81,30 +64,35 @@ export class QueueClass extends VoiceChannelClass {
               page,
             },
           },
-          variables,
+          variables: {
+            channelId,
+            queueId,
+            page,
+          },
         })
       }
 
-      this.page = page
       this.queueId = queueId
       this.length = queueLength
-
-      // if (!newQueue) return
-      // this.queue = newQueue
 
       if (controls !== null) {
         const { index, paused, volume, play } = controls
         if (index !== null) {
+          this.page = page
           this.index = index % 10
           this.time = 0
           if (page !== null) this.page = page
         }
-        if (paused !== null) this.paused = paused
+        if (paused !== null) {
+          super.pause(paused)
+          this.paused = paused
+        }
         if (volume !== null) this.setVolume = volume
 
         const playable = play || firstVideo
-        if (playable && !this.paused) {
-          playCurrentMusic(this)
+        if (playable) {
+          this.queue = queue
+          if (!this.paused) playCurrentMusic(this)
         }
       }
 
@@ -130,6 +118,14 @@ export class QueueClass extends VoiceChannelClass {
   shuffleMode = (shuffle: boolean) => {
     this.shuffle = shuffle
     playCurrentMusic(this)
+  }
+
+  clearQueue = () => {
+    this.queue = []
+    this.index = 0
+    this.length = 0
+    this.page = 0
+    this.endDispatcher()
   }
 
   //Index
@@ -166,7 +162,8 @@ export class QueueClass extends VoiceChannelClass {
 
   //paused
   set setPaused(paused: boolean) {
-    this.updateControls({ paused: paused })
+    super.pause(paused)
+    this.paused = paused
   }
 
   get isPaused() {
@@ -226,7 +223,7 @@ export class QueueClass extends VoiceChannelClass {
     QueueEmbed.setTimeout(0)
     QueueEmbed.setFunctionEmojis({
       '⬅️': async (user, instance) => {
-        console.log('queuePage', this.queuePage - 1)
+        //console.log('queuePage', this.queuePage - 1)
         const data = await getQueueTitle(this.getChannel!.id, this.queueId, this.queuePage - 1)
         if (!data) return
         const { queue, page } = data
@@ -235,7 +232,7 @@ export class QueueClass extends VoiceChannelClass {
         QueueEmbed.setArray(queue)
       },
       '➡️': async (user, instance) => {
-        console.log('queuePage', this.queuePage + 1)
+        //console.log('queuePage', this.queuePage + 1)
         const data = await getQueueTitle(this.getChannel!.id, this.queueId, this.queuePage + 1)
         if (!data) return
         const { queue, page } = data

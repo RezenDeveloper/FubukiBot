@@ -21,6 +21,7 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
       currentQueue.sendCurrentEmbed(channel)
     }, 1000)
   } else {
+    console.log(number)
     if (number <= currentQueue.getLength && number > 0) {
       currentQueue.setIndex = number - 1
       message.react(getCheckEmote(message))

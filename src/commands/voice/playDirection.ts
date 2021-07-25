@@ -4,7 +4,7 @@ import { getNickname, getErrorEmote, getCheckEmote } from './../../utils/utils'
 import type { QueueClass } from '../classes/queueClass'
 
 export const prev = async (message: Message, currentQueue: QueueClass) => {
-  const index = currentQueue.getIndex * currentQueue.getPage
+  const index = currentQueue.getActualIndex()
   const length = currentQueue.getLength
   const { channel } = message
   const name = await getNickname(message)

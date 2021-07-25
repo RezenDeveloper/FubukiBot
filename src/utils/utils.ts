@@ -30,7 +30,7 @@ export const hasCommands = (
 
 export const getNickname = async (message: Message) => {
   const member = await message.guild!.member(message.author)
-  return member ? member.nickname! : message.author.username
+  return (member && member.nickname) || message.author.username
 }
 
 export const getPlaylistId = (url: string) => {

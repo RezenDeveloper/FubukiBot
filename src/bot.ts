@@ -40,6 +40,7 @@ client.ws.on(
 client.on('message', async message => {
   const configData = await getConfig()
   if (!configData) return sendErrorMessage(message.channel as TextChannel)
+  if (message.author.id === configData.botId) return
 
   if (searchObj.getWaiting) return await searchWaiting(message)
 

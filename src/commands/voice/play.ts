@@ -4,7 +4,7 @@ import { getCheckEmote, getErrorEmote, getPlaylistId, SendError, sendErrorMessag
 import ytdl from 'ytdl-core'
 import { playCurrentMusic } from './playCurrentMusic'
 import { URL } from 'url'
-import { insertOneVideo, insertPlaylist } from '../../utils/api/fubuki/queue'
+import { insertOneVideo, insertPlaylist, insertSearchVideo } from '../../utils/api/fubuki/queue'
 
 export const play = async (message: Message, currentQueue: QueueClass, add?: boolean) => {
   const { content, channel } = message
@@ -32,34 +32,16 @@ export const play = async (message: Message, currentQueue: QueueClass, add?: boo
     sendTitle(channel, title, add ? 'Add' : 'Play')
     message.react(getCheckEmote(message))
   }
-  //It's just a name
+  //It's a search query
   else {
-    const name = content.replace(content.split(' ')[0], '')
-    // SearchVideo(name, 1).then(({result}) => {
-    //     if(!result.length){
-    //         channel.send(`Sorry, i couldn't find this video`)
-    //         message.react(getErrorEmote())
-    //         return
-    //     }
-    //     const { title } = result[0]
-    //     //Add to the queue
-    //     if(add && currentQueueArray.length !== 0){
-    //         currentQueue.setQueue = [
-    //             ...currentQueueArray,
-    //             result[0]
-    //         ]
-    //         sendTitle(channel, title ,"Add")
-    //         message.react(getCheckEmote(message))
-    //     }
-    //     //Start a new queue
-    //     else{
-    //         currentQueue.setIndex = 0;
-    //         currentQueue.setQueue = result
-    //         playCurrentMusic(currentQueue)
-    //         sendTitle(channel, title, "Play")
-    //         message.react(getCheckEmote(message))
-    //     }
-    // }).catch(err => SendError("SearchVideo",err))
+    const query = content.replace(content.split(' ')[0], '').trim()
+
+    const data = await insertSearchVideo(message.guild!.id, query, add)
+    if (!data) return sendErrorMessage(channel as TextChannel)
+    const { title } = data
+
+    sendTitle(channel, title, add ? 'Add' : 'Play')
+    message.react(getCheckEmote(message))
   }
 }
 

@@ -83,15 +83,15 @@ const handleVoiceCommands = async (message: Message, commandObj?: IcommandVoice)
 }
 
 const isOnChannel = (memberChannel: VoiceChannel | null | undefined, needVoice: boolean, currentQueue: QueueClass) => {
-  return new Promise(async (resolve: (res: boolean) => void) => {
+  return new Promise((resolve: (res: boolean) => void) => {
     if (currentQueue.getChannel && !needVoice) {
       return resolve(true)
     }
     if (!memberChannel) return resolve(false)
 
     if (!currentQueue.getConnection || (currentQueue.getChannel !== memberChannel && needVoice)) {
-      memberChannel.join().then(async connection => {
-        await currentQueue.setChannel(memberChannel)
+      memberChannel.join().then(connection => {
+        currentQueue.setChannel(memberChannel)
         currentQueue.setConnection = connection
         currentQueue.startWatch()
         resolve(true)

@@ -6,7 +6,6 @@ export class VoiceChannelClass {
   private channel?: VoiceChannel
   private connection?: VoiceConnection
   private dispatcher?: StreamDispatcher
-  private dispatcherStatus: 'running' | 'ended'
   private leaveTimeout?: NodeJS.Timeout
   private subscription?: ZenObservable.Subscription
   private lastFetch?: Date
@@ -15,7 +14,6 @@ export class VoiceChannelClass {
     this.channel = undefined
     this.connection = undefined
     this.dispatcher = undefined
-    this.dispatcherStatus = 'running'
     this.leaveTimeout = undefined
     this.lastFetch = undefined
   }
@@ -60,16 +58,13 @@ export class VoiceChannelClass {
   get getDispatcher() {
     return this.dispatcher
   }
-  get getDispatcherStatus() {
-    return this.dispatcherStatus
-  }
   set setVolume(volume: number) {
     if (volume > 2 || volume < 0) return
     this.dispatcher?.setVolume(volume)
   }
 
   pause(setIsPaused?: boolean) {
-    if (!this.dispatcher || this.dispatcherStatus === 'ended') return
+    if (!this.dispatcher) return
 
     if (setIsPaused === undefined) {
       if (this.dispatcher.paused) this.dispatcher.resume()
@@ -79,28 +74,30 @@ export class VoiceChannelClass {
   }
 
   endDispatcher() {
-    this.dispatcher!.destroy()
-    this.dispatcherStatus = 'ended'
+    if (!this.dispatcher) return
+    this.dispatcher.destroy()
+    this.dispatcher = undefined
   }
 
   //Channel
-  setChannel = async (channel: VoiceChannel) => {
+  setChannel = (channel: VoiceChannel) => {
     const serverId = channel.guild.id
     const channelId = channel.id
 
-    const data = await insertServer({ serverId, channelId })
-    if (data?.created) console.log('server created')
-    if (data?.exists) {
-      const currentDate = new Date()
-      if (this.lastFetch) {
-        const diff = Math.round((currentDate.getTime() - this.lastFetch.getTime()) / (1000 * 60 * 60 * 24))
-        // already fetched today
-        if (diff < 1) return
+    insertServer({ serverId, channelId }).then(async data => {
+      if (data?.created) console.log('server created')
+      if (data?.exists) {
+        const currentDate = new Date()
+        if (this.lastFetch) {
+          const diff = Math.round((currentDate.getTime() - this.lastFetch.getTime()) / (1000 * 60 * 60 * 24))
+          // already fetched today
+          if (diff < 1) return
+        }
+        const { updated } = await updateServer(serverId, channelId)
+        if (updated) console.log('server updated')
+        this.lastFetch = new Date()
       }
-      const { updated } = await updateServer(serverId, channelId)
-      if (updated) console.log('server updated')
-      this.lastFetch = new Date()
-    }
+    })
 
     this.channel = channel
   }
@@ -125,20 +122,13 @@ export class VoiceChannelClass {
   //Listeners
   private listenConnection() {
     this.connection!.on('disconnect', () => {
-      this.dispatcherStatus = 'ended'
+      this.dispatcher?.destroy()
       this.connection = undefined
     })
   }
   private listenDispatcher() {
-    this.dispatcher!.on('start', async () => {
-      this.dispatcherStatus = 'running'
-    })
-    this.dispatcher!.on('error', async err => {
+    this.dispatcher?.on('error', async err => {
       SendError('Dispatcher', err)
-      this.dispatcherStatus = 'ended'
-    })
-    this.dispatcher!.on('close', async () => {
-      this.dispatcherStatus = 'ended'
     })
   }
 }

@@ -64,6 +64,39 @@ export const insertPlaylist = async (serverId: string, url: string, push = false
   }
 }
 
+export const insertSearchVideo = async (serverId: string, query: string, push = false) => {
+  try {
+    const { data } = await apolloClient.mutate({
+      mutation: gql`
+        mutation ($serverId: String!, $query: String!, $push: Boolean) {
+          searchOneVideo(serverId: $serverId, query: $query, push: $push) {
+            title
+            url
+            description
+            image
+            seconds
+            publishedAt
+            author
+            isLive
+            status
+            index
+          }
+        }
+      `,
+      variables: {
+        serverId,
+        query,
+        push,
+      },
+    })
+
+    return data.searchOneVideo as Music
+  } catch (error) {
+    SendError('GraphQl insertSearchVideo', error)
+    return null
+  }
+}
+
 export const clearQueue = async (serverId: string) => {
   try {
     const { data } = await apolloClient.mutate({
@@ -204,6 +237,37 @@ export const getQueueTitle = async (channelId: string, queueId: string, page: nu
   } catch (error) {
     if (error.graphQLErrors[0].message === 'INVALID_PAGE') return
     SendError('getQueueTitle', error)
+    return null
+  }
+}
+
+const SEARCH_VIDEOS = gql`
+  query searchMusics($query: String!) {
+    searchMusics(query: $query) {
+      title
+      url
+      description
+      image
+      seconds
+      publishedAt
+      author
+      isLive
+      status
+    }
+  }
+`
+
+export const searchVideos = async (query: string) => {
+  try {
+    const { data } = await apolloClient.query({
+      query: SEARCH_VIDEOS,
+      variables: {
+        query,
+      },
+    })
+    return data.searchMusics as VideoApi[]
+  } catch (error) {
+    SendError('searchVideos', error)
     return null
   }
 }

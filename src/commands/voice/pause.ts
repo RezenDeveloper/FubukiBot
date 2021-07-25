@@ -9,8 +9,8 @@ export const pause = async (message: Message, currentQueue: QueueClass) => {
   const dispatcher = currentQueue.getDispatcher
   const connection = currentQueue.getConnection
 
-  if (currentQueue.getDispatcherStatus === 'ended') {
-    channel.send('This music already ended!')
+  if (!currentQueue.getDispatcher) {
+    channel.send('There is nothing to pause!')
     message.react(getErrorEmote())
     return
   }
