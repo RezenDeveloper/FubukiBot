@@ -70,6 +70,8 @@ export class QueueClass extends VoiceChannelClass {
             page,
           },
         })
+        console.log('cache updated')
+        this.queue = queue
       }
 
       this.queueId = queueId
@@ -91,7 +93,6 @@ export class QueueClass extends VoiceChannelClass {
 
         const playable = play || firstVideo
         if (playable) {
-          this.queue = queue
           if (!this.paused) playCurrentMusic(this)
         }
       }

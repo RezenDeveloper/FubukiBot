@@ -17,7 +17,9 @@ export const search = async (message: Message, currentQueue: QueueClass, waiting
     if (/^([0-9]+,?\s*)+$/g.test(content)) {
       const numbers = content.split(',').map(value => Number(value.trim()))
       console.log(numbers)
-      numbers.forEach(async (value, arrayIndex) => {
+
+      for (let arrayIndex = 0; arrayIndex < numbers.length; arrayIndex++) {
+        const value = numbers[arrayIndex]
         const index = value - 1
 
         if (index > searchQueue.length) {
@@ -35,7 +37,8 @@ export const search = async (message: Message, currentQueue: QueueClass, waiting
         else channel.send(`Playing: **${data.title}**`)
 
         console.log('added', data.title)
-      })
+      }
+
       searchObj.setWaiting = false
       searchObj.setSearchQueue = []
     } else {
@@ -62,9 +65,8 @@ export const search = async (message: Message, currentQueue: QueueClass, waiting
   SearchEmbed.formatField('Musics', i => {
     const time = result[i as number].seconds
     const minutes = Math.floor(time / 60) > 1 ? Math.floor(time / 60) : '00'
-    const seconds = time - Math.floor(time / 60) * 60
     const hours = Math.floor(time / 3600) > 1 ? Math.floor(time / 3600) : '00'
-
+    const seconds = time - Math.floor(time / 60) * 60
     return `**Song ${(i as number) + 1}** ${result[i as number].title} **${hours}:${minutes}:${seconds}**`
   })
   SearchEmbed.setDisabledNavigationEmojis(['delete', 'jump'])
