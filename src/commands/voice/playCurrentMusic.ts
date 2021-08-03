@@ -8,7 +8,13 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
   const connection = currentQueue.getConnection
   const queue = currentQueue.getQueue
   const index = currentQueue.getIndex
-  console.log(index)
+  const { isLive, status, url: videoUrl } = queue[index]
+
+  console.log('current index', index)
+
+  if (status === 'private') return (currentQueue.setIndex = currentQueue.getActualIndex() + 1)
+
+  const timeParam = new URL(videoUrl).searchParams.get('t')
   let time = currentQueue.getTime.toString()
   let filter: Filter = 'audio'
 
@@ -17,10 +23,6 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
 
   //console.log("index: "+index+" length: "+queue.length)
   //console.log('index++ '+ (index+1))
-
-  const { isLive, title } = queue[index]
-  const videoUrl = queue[index].url!
-  const timeParam = new URL(videoUrl).searchParams.get('t')
 
   //for lives and specific timings: filter=audio
   if (time === '0' && timeParam !== null) {
@@ -32,7 +34,7 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
 
   const stream = ytdl(videoUrl, {
     begin: `${time}s`,
-    filter: filter,
+    filter,
     quality: 'highestaudio',
     highWaterMark: 1 << 25,
     requestOptions: {
