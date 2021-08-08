@@ -1,4 +1,4 @@
-import { TextChannel, WSEventType, Client } from 'discord.js'
+import { TextChannel, WSEventType, Client, Intents } from 'discord.js'
 
 import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'
@@ -14,30 +14,15 @@ import { updateUserChannel } from './utils/api/fubuki/user'
 import { sendErrorMessage } from './utils/utils'
 
 const { TOKEN } = process.env
-export const client = new Client()
+export const client = new Client({
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
+})
 
-type WsEvents = WSEventType & 'INTERACTION_CREATE'
-
-client.once('ready', async () => {
+client.on('ready', async () => {
   console.log('Ready!')
 })
 
-client.ws.on(
-  'INTERACTION_CREATE' as WsEvents,
-  async ({ data, channel_id, guild_id, member, user: userDm, id, token }: Interaction) => {
-    if (!data) return
-    if (userDm) {
-      //DM
-      return
-    }
-
-    const channel = (await client.channels.fetch(channel_id!)) as TextChannel
-    const guild = await client.guilds.fetch(guild_id!)
-    const user = await client.users.fetch(member!.user.id)
-  }
-)
-
-client.on('message', async message => {
+client.on('messageCreate', async message => {
   const configData = await getConfig()
   if (!configData) return sendErrorMessage(message.channel as TextChannel)
   if (message.author.id === configData.botId) return
@@ -60,7 +45,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   const currentQueue = getCurrentQueue(serverId)
 
   const userId = newState.member?.user.id
-  const currentChannel = newState.channelID || ''
+  const currentChannel = newState.channelId || ''
 
   if (userId) {
     updateUserChannel(userId, currentChannel)

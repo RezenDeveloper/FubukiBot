@@ -1,4 +1,4 @@
-import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js'
+import { DMChannel, Message, NewsChannel, TextBasedChannels, TextChannel } from 'discord.js'
 import type { QueueClass } from '../classes/queueClass'
 import { getCheckEmote, getErrorEmote, getPlaylistId, SendError, sendErrorMessage } from '../../utils/utils'
 import ytdl from 'ytdl-core'
@@ -45,7 +45,7 @@ export const play = async (message: Message, currentQueue: QueueClass, add?: boo
   }
 }
 
-const sendTitle = (channel: TextChannel | DMChannel | NewsChannel, title: string, type: 'Play' | 'Add') => {
+const sendTitle = (channel: TextBasedChannels, title: string, type: 'Play' | 'Add') => {
   if (type === 'Add') {
     channel.send(`**${title}** was added to the queue!`)
   }

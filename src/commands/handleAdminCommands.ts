@@ -7,7 +7,7 @@ import { getConfig } from '../utils/api/fubuki/config'
 export const isAdminCommand = async (message: Message) => {
   const configData = await getConfig()
   const { content, channel, author } = message
-  const { prefix, adminCommands, admins } = configData
+  const { prefix, adminCommands, admins } = configData!
 
   const id = admins.find(id => id === author.id)
 

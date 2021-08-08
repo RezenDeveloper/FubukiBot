@@ -1,10 +1,11 @@
-import { Message, VoiceChannel } from 'discord.js'
+import { Message, StageChannel, VoiceChannel } from 'discord.js'
 import { getNickname, hasCommands } from '../utils/utils'
 import { play, pause, queue, playDirection, shuffle, time, search, clear, leave } from './voice/getVoiceCommands'
 import { getCurrentQueue } from './classes/queueClass'
 import type { QueueClass } from './classes/queueClass'
 import { getConfig } from '../utils/api/fubuki/config'
 import { insertServer } from '../utils/api/fubuki/server'
+import { joinVoiceChannel } from '@discordjs/voice'
 
 export const searchWaiting = async (message: Message) => {
   const currentQueue = getCurrentQueue(message.guild!.id)
@@ -22,10 +23,10 @@ export const isVoiceCommand = async (message: Message) => {
     channel.send(message)
     errorMessage = true
   })
-  if (command && channel.type === 'text') {
+  if (command && channel.type === 'GUILD_TEXT') {
     await handleVoiceCommands(message, command as IcommandVoice)
     return true
-  } else if (command && channel.type !== 'text') {
+  } else if (command && channel.type !== 'GUILD_TEXT') {
     channel.send(`Sorry ${await getNickname(message)}, i can't do that on this channel.`)
     return true
   } else if (errorMessage) {
@@ -39,6 +40,7 @@ const handleVoiceCommands = async (message: Message, commandObj?: IcommandVoice)
   const { commands, needVoice } = commandObj!
   const memberChannel = member?.voice.channel
   const currentQueue = getCurrentQueue(message.guild!.id)
+  if (memberChannel?.type === 'GUILD_STAGE_VOICE') return
 
   if (!(await isOnChannel(memberChannel, needVoice, currentQueue))) {
     channel.send(`Please join a voice channel first ${await getNickname(message)}!`)
@@ -89,13 +91,15 @@ const isOnChannel = (memberChannel: VoiceChannel | null | undefined, needVoice: 
     }
     if (!memberChannel) return resolve(false)
 
-    if (!currentQueue.getConnection || (currentQueue.getChannel !== memberChannel && needVoice)) {
-      memberChannel.join().then(connection => {
-        currentQueue.setChannel(memberChannel)
-        currentQueue.setConnection = connection
-        currentQueue.startWatch()
-        resolve(true)
+    if (!currentQueue.connection || (currentQueue.getChannel !== memberChannel && needVoice)) {
+      joinVoiceChannel({
+        channelId: memberChannel.id,
+        guildId: memberChannel.guild.id,
+        adapterCreator: memberChannel.guild.voiceAdapterCreator,
       })
+      currentQueue.setChannel(memberChannel)
+      currentQueue.startWatch()
+      resolve(true)
     } else {
       resolve(true)
     }

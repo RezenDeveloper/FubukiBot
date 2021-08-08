@@ -1,16 +1,15 @@
 import ytdl, { Filter } from 'ytdl-core'
 import { URL } from 'url'
 import type { QueueClass } from '../classes/queueClass'
+import { AudioPlayerStatus, createAudioResource, VoiceConnectionStatus } from '@discordjs/voice'
 
 const COOKIES = process.env.COOKIES
 
 export const playCurrentMusic = (currentQueue: QueueClass) => {
-  const connection = currentQueue.getConnection
+  const { connection, player } = currentQueue
   const queue = currentQueue.getQueue
   const index = currentQueue.getIndex
   const { isLive, status, url: videoUrl } = queue[index]
-
-  console.log('current index', index)
 
   if (status === 'private') return (currentQueue.setIndex = currentQueue.getActualIndex() + 1)
 
@@ -32,7 +31,7 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
     filter = 'audioonly'
   }
 
-  const stream = ytdl(videoUrl, {
+  const video = ytdl(videoUrl, {
     begin: `${time}s`,
     filter,
     quality: 'highestaudio',
@@ -43,10 +42,15 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
       },
     },
   })
-  const dispatcher = connection.play(stream)
-  currentQueue.setDispatcher = dispatcher
 
-  dispatcher.on('finish', () => {
+  player.play(createAudioResource(video))
+
+  connection!.subscribe(player)
+
+  player.on(AudioPlayerStatus.Idle, () => {
+    const { isShuffle, getShuffleIndex } = currentQueue.shuffle
+    if (isShuffle) return getShuffleIndex()
+
     const newIndex = currentQueue.getActualIndex() + 1
     if (newIndex < currentQueue.getLength) {
       console.log('newIndex', newIndex)

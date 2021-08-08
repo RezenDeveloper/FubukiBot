@@ -1,82 +1,51 @@
-import { StreamDispatcher, VoiceChannel, VoiceConnection } from 'discord.js'
+import { getVoiceConnection, VoiceConnection, createAudioPlayer, AudioPlayer } from '@discordjs/voice'
+import { VoiceChannel } from 'discord.js'
 import { insertServer, updateServer } from '../../utils/api/fubuki/server'
 import { SendError, truncate } from '../../utils/utils'
 
 export class VoiceChannelClass {
-  private channel?: VoiceChannel
-  private connection?: VoiceConnection
-  private dispatcher?: StreamDispatcher
-  private leaveTimeout?: NodeJS.Timeout
-  private subscription?: ZenObservable.Subscription
-  private lastFetch?: Date
+  private _channel?: VoiceChannel
+  private _player: AudioPlayer
+  private _leaveTimeout?: NodeJS.Timeout
+  private _subscription?: ZenObservable.Subscription
+  private _lastFetch?: Date
 
   constructor() {
-    this.channel = undefined
-    this.connection = undefined
-    this.dispatcher = undefined
-    this.leaveTimeout = undefined
-    this.lastFetch = undefined
+    this._channel = undefined
+    this._player = createAudioPlayer()
+    this._leaveTimeout = undefined
+    this._lastFetch = undefined
   }
 
   //Subscription
-  set setSubscription(subscription: ZenObservable.Subscription | undefined) {
-    this.subscription = subscription
+  set subscription(subscription: ZenObservable.Subscription | undefined) {
+    this._subscription = subscription
   }
 
-  get getSubscription() {
-    return this.subscription
+  get subscription() {
+    return this._subscription
+  }
+
+  get player() {
+    return this._player
   }
 
   endSubscription() {
-    if (!this.subscription) return
-    this.subscription.unsubscribe()
-    this.subscription = undefined
+    if (!this._subscription) return
+    this._subscription.unsubscribe()
+    this._subscription = undefined
   }
 
   //Connection
-  set setConnection(connection: VoiceConnection) {
-    //if(this.connection) this.endConnection()
-    this.connection = connection
-    this.listenConnection()
+  get connection() {
+    if (!this._channel) return undefined
+    return getVoiceConnection(this._channel.guild.id)
   }
-  get getConnection() {
-    return this.connection!
-  }
+
   endConnection() {
-    if (this.dispatcher) this.endDispatcher()
-    if (this.subscription) this.endSubscription()
-    this.connection!.disconnect()
-    this.connection = undefined
-  }
-
-  //Dispatcher
-  set setDispatcher(dispatcher: StreamDispatcher) {
-    if (this.dispatcher) this.endDispatcher()
-    this.dispatcher = dispatcher
-    this.listenDispatcher()
-  }
-  get getDispatcher() {
-    return this.dispatcher
-  }
-  set setVolume(volume: number) {
-    if (volume > 2 || volume < 0) return
-    this.dispatcher?.setVolume(volume)
-  }
-
-  pause(setIsPaused?: boolean) {
-    if (!this.dispatcher) return
-
-    if (setIsPaused === undefined) {
-      if (this.dispatcher.paused) this.dispatcher.resume()
-      else this.dispatcher.pause()
-    } else if (setIsPaused) this.dispatcher.pause()
-    else this.dispatcher.resume()
-  }
-
-  endDispatcher() {
-    if (!this.dispatcher) return
-    this.dispatcher.destroy()
-    this.dispatcher = undefined
+    if (this._subscription) this.endSubscription()
+    this.connection?.disconnect()
+    this.connection?.destroy()
   }
 
   //Channel
@@ -88,49 +57,38 @@ export class VoiceChannelClass {
       if (data?.created) console.log('server created')
       if (data?.exists) {
         const currentDate = new Date()
-        if (this.lastFetch) {
-          const diff = Math.round((currentDate.getTime() - this.lastFetch.getTime()) / (1000 * 60 * 60 * 24))
+        if (this._lastFetch) {
+          const diff = Math.round((currentDate.getTime() - this._lastFetch.getTime()) / (1000 * 60 * 60 * 24))
           // already fetched today
           if (diff < 1) return
         }
         const { updated } = await updateServer(serverId, channelId)
         if (updated) console.log('server updated')
-        this.lastFetch = new Date()
+        this._lastFetch = new Date()
       }
     })
 
-    this.channel = channel
+    this._channel = channel
   }
   get getChannel() {
-    return this.channel
+    return this._channel
   }
 
   //Timer
   get getLeaveTimeout() {
-    return this.leaveTimeout
+    return this._leaveTimeout
   }
   leaveIn(seconds: number) {
-    this.leaveTimeout = setTimeout(() => {
+    this._leaveTimeout = setTimeout(() => {
       this.endConnection()
     }, seconds * 1000)
   }
   clearLeaveTimeout() {
-    if (this.leaveTimeout) clearTimeout(this.leaveTimeout)
-    this.leaveTimeout = undefined
+    if (this._leaveTimeout) clearTimeout(this._leaveTimeout)
+    this._leaveTimeout = undefined
   }
 
-  //Listeners
-  private listenConnection() {
-    this.connection!.on('disconnect', () => {
-      this.dispatcher?.destroy()
-      this.connection = undefined
-    })
-  }
-  private listenDispatcher() {
-    this.dispatcher?.on('error', async err => {
-      SendError('Dispatcher', err)
-    })
-  }
+  // Listeners
 }
 class SearchClass {
   private queue: VideoBd[] = []

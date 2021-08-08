@@ -4,10 +4,18 @@ import { playCurrentMusic } from './playCurrentMusic'
 import type { QueueClass } from '../classes/queueClass'
 
 export const shuffle = async (message: Message, currentQueue: QueueClass) => {
-  const { channel, author } = message
+  const { channel } = message
   const { length } = currentQueue.getQueue
+
+  if (currentQueue.shuffle.isShuffle) {
+    currentQueue.shuffle.isShuffle = false
+    channel.send(`Shuffle mode off!`)
+    message.react(getCheckEmote(message))
+    return
+  }
+
   if (length === 0) {
-    channel.send(`I can't shuffle a queue that doesn't exist ${await getNickname(author)}!`)
+    channel.send(`I can't shuffle a queue that doesn't exist ${await getNickname(message)}!`)
     message.react(getErrorEmote())
     return
   }
@@ -16,7 +24,8 @@ export const shuffle = async (message: Message, currentQueue: QueueClass) => {
     message.react(getErrorEmote())
     return
   }
-  currentQueue.shuffleQueue()
+  currentQueue.shuffle.isShuffle = true
+  currentQueue.shuffle.getShuffleIndex()
   message.react(getCheckEmote(message))
-  playCurrentMusic(currentQueue)
+  channel.send(`Shuffle mode on!`)
 }

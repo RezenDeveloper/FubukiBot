@@ -6,7 +6,7 @@ import { help, avatar, d100, getDice, d20, sauce } from './text/getTextCommands'
 export const isTextCommand = async (message: Message) => {
   const configData = await getConfig()
   const { content, channel } = message
-  const { prefix, textCommands } = configData
+  const { prefix, textCommands } = configData!
   let errorMessage = false
 
   const command = hasCommands(textCommands, content, prefix, message => {
@@ -32,7 +32,7 @@ const handleTextCommands = async (message: Message, command: Icommand) => {
       avatar(message)
       break
     case 'd5':
-      channel.send(getDice(5))
+      channel.send(getDice(5).toString())
       break
     case 'd20':
       d20(message)

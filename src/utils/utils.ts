@@ -29,7 +29,7 @@ export const hasCommands = (
 }
 
 export const getNickname = async (message: Message) => {
-  const member = await message.guild!.member(message.author)
+  const member = await message.guild!.members.resolve(message.author)
   return (member && member.nickname) || message.author.username
 }
 
@@ -44,7 +44,7 @@ export const getPlaylistId = (url: string) => {
 
 export const SendError = (from: string, error: Error | string) => {
   client.channels.fetch('766870745028493392').then(logChannel => {
-    if (logChannel.isText()) {
+    if (logChannel?.isText()) {
       logChannel.send(`Error on --${from}--\n${error}`)
     }
   })
@@ -57,7 +57,7 @@ export const sendErrorMessage = async (channel: TextChannel, text?: string) => {
 
 export const setStatus = async (
   status: string,
-  type: 'LISTENING' | 'PLAYING' | 'STREAMING' | 'WATCHING' | 'CUSTOM_STATUS' | 'COMPETING'
+  type?: number | 'LISTENING' | 'PLAYING' | 'STREAMING' | 'WATCHING' | 'COMPETING'
 ) => {
   try {
     await client.user!.setActivity(`${status}`, { type })

@@ -1,3 +1,4 @@
+import { AudioPlayerStatus } from '@discordjs/voice'
 import { Message } from 'discord.js'
 import { getCheckEmote } from '../../utils/utils'
 import type { QueueClass } from '../classes/queueClass'
@@ -6,15 +7,13 @@ import { getErrorEmote } from './../../utils/utils'
 export const pause = async (message: Message, currentQueue: QueueClass) => {
   const { channel } = message
   const voiceChannel = currentQueue.getChannel
-  const dispatcher = currentQueue.getDispatcher
-  const connection = currentQueue.getConnection
 
-  if (!currentQueue.getDispatcher) {
+  if (currentQueue.player.state.status !== AudioPlayerStatus.Playing) {
     channel.send('There is nothing to pause!')
     message.react(getErrorEmote())
     return
   }
-  if (voiceChannel && dispatcher && connection) {
+  if (voiceChannel) {
     if (currentQueue.isPaused) {
       currentQueue.setPaused = false
 

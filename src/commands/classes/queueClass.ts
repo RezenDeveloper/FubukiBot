@@ -1,4 +1,4 @@
-import { DMChannel, NewsChannel, TextChannel, VoiceChannel } from 'discord.js'
+import { DMChannel, MessageEmbed, NewsChannel, TextBasedChannels, TextChannel, VoiceChannel } from 'discord.js'
 import { handleAsyncFunc, SendError, sendErrorMessage } from '../../utils/utils'
 import { VoiceChannelClass } from './commandClasses'
 import { playCurrentMusic } from '../voice/playCurrentMusic'
@@ -7,14 +7,69 @@ import { insertServer, serverExists, updateServer, watchServer } from '../../uti
 import { getQueueTitle, GET_QUEUE_TITLE, QueueControls, updateQueueControls } from '../../utils/api/fubuki/queue'
 import { FieldsEmbed } from 'discord-paginationembed'
 import { apolloClient } from '../../utils/api/fubuki/fubuki'
-import gql from 'graphql-tag'
-import { valueFromAST } from 'graphql'
+import { AudioPlayerStatus } from '@discordjs/voice'
 
 const classArray: QueueClass[] = []
 const serverIdArray: string[] = []
+class ShuffleClass {
+  private _shuffleList: number[]
+  private _isShuffle: boolean
+  private currentQueue: QueueClass
+
+  constructor(currentQueue: QueueClass) {
+    this._shuffleList = []
+    this._isShuffle = false
+    this.currentQueue = currentQueue
+  }
+
+  addToShuffleList = (index: number) => {
+    this._shuffleList = [...this._shuffleList, index]
+  }
+
+  clearShuffleList = () => {
+    this._shuffleList = []
+  }
+
+  get shuffleList() {
+    return this._shuffleList
+  }
+
+  set isShuffle(shuffle: boolean) {
+    this._isShuffle = shuffle
+    if (!shuffle) this.clearShuffleList()
+  }
+
+  get isShuffle() {
+    return this._isShuffle
+  }
+
+  getShuffleIndex = () => {
+    const queueLenght = this.currentQueue.getLength
+    let pass = false
+    let index = 0
+
+    if (this._shuffleList.length === queueLenght) this.clearShuffleList()
+
+    while (!pass) {
+      index = Math.floor(Math.random() * queueLenght)
+      console.log('shuffle index', index)
+      if (!this._shuffleList.includes(index)) {
+        this.addToShuffleList(index)
+        pass = true
+      }
+    }
+
+    console.log({
+      shuffleListLength: this._shuffleList.length,
+      queueLenght,
+    })
+
+    this.currentQueue.setIndex = index
+  }
+}
 
 export class QueueClass extends VoiceChannelClass {
-  private shuffle: boolean
+  private shuffleClass: ShuffleClass
   private currentEmbed?: Discord.MessageEmbed
   private currentEmbedMessage?: Discord.Message
   private queue: Music[]
@@ -33,8 +88,8 @@ export class QueueClass extends VoiceChannelClass {
     this.page = 0
     this.index = 0
     this.time = 0
-    this.shuffle = false
-    this.paused = super.getDispatcher?.paused !== undefined ? super.getDispatcher?.paused : false
+    this.shuffleClass = new ShuffleClass(this)
+    this.paused = super.player.state.status === AudioPlayerStatus.Paused ? true : false
     this.queuePage = 0
     this.queueId = ''
   }
@@ -45,7 +100,7 @@ export class QueueClass extends VoiceChannelClass {
     const serverId = super.getChannel!.guild.id
     const channelId = super.getChannel!.id
     console.log('watching')
-    super.setSubscription = await watchServer(serverId, async ({ channel, type }) => {
+    super.subscription = await watchServer(serverId, async ({ channel, type }) => {
       console.log({ type, channel })
       const firstVideo = this.queue.length === 0
 
@@ -86,10 +141,10 @@ export class QueueClass extends VoiceChannelClass {
           if (page !== null) this.page = page
         }
         if (paused !== null) {
-          super.pause(paused)
+          super.player.pause(paused)
           this.paused = paused
         }
-        if (volume !== null) this.setVolume = volume
+        //if (volume !== null) resource.volume = volume
 
         const playable = play || firstVideo
         if (playable) {
@@ -116,9 +171,8 @@ export class QueueClass extends VoiceChannelClass {
     return this.length
   }
 
-  shuffleMode = (shuffle: boolean) => {
-    this.shuffle = shuffle
-    playCurrentMusic(this)
+  get shuffle() {
+    return this.shuffleClass
   }
 
   clearQueue = () => {
@@ -126,7 +180,7 @@ export class QueueClass extends VoiceChannelClass {
     this.index = 0
     this.length = 0
     this.page = 0
-    this.endDispatcher()
+    super.player.stop()
   }
 
   //Index
@@ -137,10 +191,13 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   nextIndex() {
+    console.log('isShuffle', this.shuffle.isShuffle)
+    if (this.shuffle.isShuffle) return this.shuffle.getShuffleIndex()
     this.updateControls({ index: this.getActualIndex() + 1 })
   }
 
   prevIndex() {
+    if (this.shuffle.isShuffle) return this.shuffle.getShuffleIndex()
     this.updateControls({ index: this.getActualIndex() - 1 })
   }
 
@@ -163,7 +220,7 @@ export class QueueClass extends VoiceChannelClass {
 
   //paused
   set setPaused(paused: boolean) {
-    super.pause(paused)
+    super.player.pause(paused)
     this.paused = paused
   }
 
@@ -180,7 +237,7 @@ export class QueueClass extends VoiceChannelClass {
     const messageEmbed = this.currentEmbedMessage
 
     if (messageEmbed) {
-      messageEmbed.edit(this.getCurrentEmbed())
+      messageEmbed.edit({ embeds: [this.getCurrentEmbed()] })
     }
   }
 
@@ -190,7 +247,7 @@ export class QueueClass extends VoiceChannelClass {
       .setColor('#0099ff')
       .setAuthor(`Current playing Song ${this.getActualIndex() + 1} from ${author}`)
       .setTitle(title)
-      .setURL(url!)
+      .setURL(url)
       .setThumbnail(
         image ||
           'https://cdn.discordapp.com/attachments/780268482519892009/823628073782083594/83372180_p0_master1200.png'
@@ -199,8 +256,8 @@ export class QueueClass extends VoiceChannelClass {
     return this.currentEmbed
   }
 
-  sendCurrentEmbed(channel: TextChannel | DMChannel | NewsChannel) {
-    channel.send(this.getCurrentEmbed()).then(message => {
+  sendCurrentEmbed(channel: TextBasedChannels) {
+    channel.send({ embeds: [this.getCurrentEmbed()] }).then(message => {
       this.currentEmbedMessage = message
     })
   }
@@ -242,7 +299,8 @@ export class QueueClass extends VoiceChannelClass {
         QueueEmbed.setArray(queue)
       },
     })
-    QueueEmbed.build()
+    console.log(QueueEmbed.embed.fields[0].value)
+    //channel.send({ embeds: [QueueEmbed.embed] })
   }
 }
 
