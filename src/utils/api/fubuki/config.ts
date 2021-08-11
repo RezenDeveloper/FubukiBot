@@ -10,6 +10,7 @@ export const getConfig = async () => {
           getConfig {
             prefix
             botId
+            admins
             adminCommands {
               name
               commands

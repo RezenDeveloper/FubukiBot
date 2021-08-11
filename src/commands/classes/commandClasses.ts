@@ -15,6 +15,7 @@ export class VoiceChannelClass {
     this._player = createAudioPlayer()
     this._leaveTimeout = undefined
     this._lastFetch = undefined
+    this._player.setMaxListeners(1)
   }
 
   //Subscription
@@ -70,6 +71,7 @@ export class VoiceChannelClass {
 
     this._channel = channel
   }
+
   get getChannel() {
     return this._channel
   }

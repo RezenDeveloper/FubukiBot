@@ -6,7 +6,7 @@ import { getQueueTitle } from '../../utils/api/fubuki/queue'
 
 export const queue = async (message: Message, currentQueue: QueueClass) => {
   const { channel, content } = message
-  const currentQueueArray = currentQueue.getQueue
+  const currentQueueArray = currentQueue.queue
 
   if (currentQueueArray.length === 0) {
     channel.send("There's no queue to show")
@@ -22,8 +22,8 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
     }, 1000)
   } else {
     console.log(number)
-    if (number <= currentQueue.getLength && number > 0) {
-      currentQueue.setIndex = number - 1
+    if (number <= currentQueue.length && number > 0) {
+      currentQueue.index = number - 1
       message.react(getCheckEmote(message))
     } else {
       channel.send('This is not a valid number')

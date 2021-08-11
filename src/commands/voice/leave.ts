@@ -4,7 +4,7 @@ import type { QueueClass } from '../classes/queueClass'
 
 export const leave = (message: Message, currentQueue: QueueClass) => {
   if (currentQueue.getChannel) {
-    currentQueue.setIndex = 0
+    currentQueue.index = 0
     currentQueue.endConnection()
     message.react(getCheckEmote(message))
   }

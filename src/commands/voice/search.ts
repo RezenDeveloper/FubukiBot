@@ -27,7 +27,7 @@ export const search = async (message: Message, currentQueue: QueueClass, waiting
           return
         }
         const music = searchQueue[index]
-        const push = currentQueue.getLength !== 0 && arrayIndex !== 0
+        const push = currentQueue.length !== 0 && arrayIndex !== 0
         console.log('push', push)
 
         const data = await insertOneVideo(message.guild!.id, music.url!, push)

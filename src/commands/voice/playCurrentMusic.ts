@@ -7,17 +7,17 @@ const COOKIES = process.env.COOKIES
 
 export const playCurrentMusic = (currentQueue: QueueClass) => {
   const { connection, player } = currentQueue
-  const queue = currentQueue.getQueue
-  const index = currentQueue.getIndex
+  const queue = currentQueue.queue
+  const index = currentQueue.index
   const { isLive, status, url: videoUrl } = queue[index]
 
-  if (status === 'private') return (currentQueue.setIndex = currentQueue.getActualIndex() + 1)
+  if (status === 'private') return (currentQueue.index = currentQueue.actualIndex + 1)
 
   const timeParam = new URL(videoUrl).searchParams.get('t')
-  let time = currentQueue.getTime.toString()
+  let time = currentQueue.time.toString()
   let filter: Filter = 'audio'
 
-  if (currentQueue.isPaused) currentQueue.setPaused = false
+  if (currentQueue.isPaused) currentQueue.isPaused = false
   currentQueue.updateEmbed()
 
   //console.log("index: "+index+" length: "+queue.length)
@@ -45,16 +45,19 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
 
   player.play(createAudioResource(video))
 
-  connection!.subscribe(player)
-
+  if (currentQueue.events.hasIdle) return
+  currentQueue.events.hasIdle = true
+  console.log('idle setted')
   player.on(AudioPlayerStatus.Idle, () => {
-    const { isShuffle, getShuffleIndex } = currentQueue.shuffle
-    if (isShuffle) return getShuffleIndex()
+    if (currentQueue.length === 0) return console.log('no queue')
+    console.log('idle')
+    const { isShuffle, setShuffleIndex } = currentQueue.shuffle
+    if (isShuffle) return setShuffleIndex()
 
-    const newIndex = currentQueue.getActualIndex() + 1
-    if (newIndex < currentQueue.getLength) {
+    const newIndex = currentQueue.actualIndex + 1
+    if (newIndex < currentQueue.length) {
       console.log('newIndex', newIndex)
-      currentQueue.setIndex = newIndex
+      currentQueue.index = newIndex
     } else {
       console.log('last index')
     }

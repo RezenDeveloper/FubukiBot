@@ -5,7 +5,7 @@ import type { QueueClass } from '../classes/queueClass'
 
 export const shuffle = async (message: Message, currentQueue: QueueClass) => {
   const { channel } = message
-  const { length } = currentQueue.getQueue
+  const { length } = currentQueue.queue
 
   if (currentQueue.shuffle.isShuffle) {
     currentQueue.shuffle.isShuffle = false
@@ -25,7 +25,7 @@ export const shuffle = async (message: Message, currentQueue: QueueClass) => {
     return
   }
   currentQueue.shuffle.isShuffle = true
-  currentQueue.shuffle.getShuffleIndex()
+  currentQueue.shuffle.setShuffleIndex()
   message.react(getCheckEmote(message))
   channel.send(`Shuffle mode on!`)
 }

@@ -17,7 +17,6 @@ export const play = async (message: Message, currentQueue: QueueClass, add?: boo
   if (playlistId) {
     const data = await insertPlaylist(message.guild!.id, searchParam, add)
     if (!data) return sendErrorMessage(channel as TextChannel)
-
     const { title, author, itemCount } = data
 
     channel.send(`${add ? 'Added' : 'Playing'} the playlist **${title}**\nFrom ${author} with ${itemCount} songs!`)

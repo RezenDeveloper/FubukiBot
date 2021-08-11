@@ -8,90 +8,42 @@ import { getQueueTitle, GET_QUEUE_TITLE, QueueControls, updateQueueControls } fr
 import { FieldsEmbed } from 'discord-paginationembed'
 import { apolloClient } from '../../utils/api/fubuki/fubuki'
 import { AudioPlayerStatus } from '@discordjs/voice'
+import { Shuffle } from './shuffle'
 
 const classArray: QueueClass[] = []
 const serverIdArray: string[] = []
-class ShuffleClass {
-  private _shuffleList: number[]
-  private _isShuffle: boolean
-  private currentQueue: QueueClass
 
-  constructor(currentQueue: QueueClass) {
-    this._shuffleList = []
-    this._isShuffle = false
-    this.currentQueue = currentQueue
-  }
-
-  addToShuffleList = (index: number) => {
-    this._shuffleList = [...this._shuffleList, index]
-  }
-
-  clearShuffleList = () => {
-    this._shuffleList = []
-  }
-
-  get shuffleList() {
-    return this._shuffleList
-  }
-
-  set isShuffle(shuffle: boolean) {
-    this._isShuffle = shuffle
-    if (!shuffle) this.clearShuffleList()
-  }
-
-  get isShuffle() {
-    return this._isShuffle
-  }
-
-  getShuffleIndex = () => {
-    const queueLenght = this.currentQueue.getLength
-    let pass = false
-    let index = 0
-
-    if (this._shuffleList.length === queueLenght) this.clearShuffleList()
-
-    while (!pass) {
-      index = Math.floor(Math.random() * queueLenght)
-      console.log('shuffle index', index)
-      if (!this._shuffleList.includes(index)) {
-        this.addToShuffleList(index)
-        pass = true
-      }
-    }
-
-    console.log({
-      shuffleListLength: this._shuffleList.length,
-      queueLenght,
-    })
-
-    this.currentQueue.setIndex = index
-  }
+interface QueueEvents {
+  hasIdle: boolean
 }
-
 export class QueueClass extends VoiceChannelClass {
-  private shuffleClass: ShuffleClass
+  private _shuffle: Shuffle
   private currentEmbed?: Discord.MessageEmbed
   private currentEmbedMessage?: Discord.Message
-  private queue: Music[]
-  private index: number
-  private page: number
-  private time: number
-  private paused: boolean
-  private length: number
-  private queuePage: number
-  private queueId: string
+  private _queue: Music[]
+  private _index: number
+  private _page: number
+  private _time: number
+  private _isPaused: boolean
+  private _length: number
+  private _queuePage: number
+  private _queueId: string
+  private _events: QueueEvents
 
   constructor() {
     super()
-    this.queue = []
-    this.length = 0
-    this.page = 0
-    this.index = 0
-    this.time = 0
-    this.shuffleClass = new ShuffleClass(this)
-    this.paused = super.player.state.status === AudioPlayerStatus.Paused ? true : false
-    this.queuePage = 0
-    this.queueId = ''
+    this._queue = []
+    this._length = 0
+    this._page = 0
+    this._index = 0
+    this._time = 0
+    this._shuffle = new Shuffle(this)
+    this._isPaused = super.player.state.status === AudioPlayerStatus.Paused ? true : false
+    this._queuePage = 0
+    this._queueId = ''
+    this._events = {
+      hasIdle: false,
+    }
   }
 
   //DataBase
@@ -101,8 +53,8 @@ export class QueueClass extends VoiceChannelClass {
     const channelId = super.getChannel!.id
     console.log('watching')
     super.subscription = await watchServer(serverId, async ({ channel, type }) => {
-      console.log({ type, channel })
-      const firstVideo = this.queue.length === 0
+      //console.log({ type, channel })
+      const firstVideo = this._queue.length === 0
 
       if (!channel) return
       const { queueLength, queueId, lastPage, page, controls, queue } = channel
@@ -126,29 +78,29 @@ export class QueueClass extends VoiceChannelClass {
           },
         })
         console.log('cache updated')
-        this.queue = queue
+        this._queue = queue
       }
 
-      this.queueId = queueId
-      this.length = queueLength
+      this._queueId = queueId
+      this._length = queueLength
 
       if (controls !== null) {
         const { index, paused, volume, play } = controls
         if (index !== null) {
-          this.page = page
-          this.index = index % 10
-          this.time = 0
-          if (page !== null) this.page = page
+          this._page = page
+          this._index = index % 10
+          this._time = 0
+          if (page !== null) this._page = page
         }
         if (paused !== null) {
           super.player.pause(paused)
-          this.paused = paused
+          this._isPaused = paused
         }
         //if (volume !== null) resource.volume = volume
 
         const playable = play || firstVideo
         if (playable) {
-          if (!this.paused) playCurrentMusic(this)
+          if (!this._isPaused) playCurrentMusic(this)
         }
       }
 
@@ -161,76 +113,24 @@ export class QueueClass extends VoiceChannelClass {
     await updateQueueControls(serverId, { ...controls })
   }
 
-  //Queue
-
-  get getQueue() {
-    return this.queue
-  }
-
-  get getLength() {
-    return this.length
-  }
-
-  get shuffle() {
-    return this.shuffleClass
-  }
-
   clearQueue = () => {
-    this.queue = []
-    this.index = 0
-    this.length = 0
-    this.page = 0
+    this._queue = []
+    this._index = 0
+    this._length = 0
+    this._page = 0
+    this._shuffle.isShuffle = false
     super.player.stop()
-  }
-
-  //Index
-  set setIndex(index: number) {
-    if (index < this.length && this.length !== 0) {
-      this.updateControls({ index })
-    }
   }
 
   nextIndex() {
     console.log('isShuffle', this.shuffle.isShuffle)
-    if (this.shuffle.isShuffle) return this.shuffle.getShuffleIndex()
-    this.updateControls({ index: this.getActualIndex() + 1 })
+    if (this.shuffle.isShuffle) return this.shuffle.setShuffleIndex()
+    console.log('passou')
+    this.updateControls({ index: this.actualIndex + 1 })
   }
 
   prevIndex() {
-    if (this.shuffle.isShuffle) return this.shuffle.getShuffleIndex()
-    this.updateControls({ index: this.getActualIndex() - 1 })
-  }
-
-  get getIndex() {
-    return this.index
-  }
-
-  get getPage() {
-    return this.page
-  }
-
-  //Time
-  set setTime(time: number) {
-    this.time = time
-  }
-
-  get getTime() {
-    return this.time
-  }
-
-  //paused
-  set setPaused(paused: boolean) {
-    super.player.pause(paused)
-    this.paused = paused
-  }
-
-  get isPaused() {
-    return this.paused
-  }
-
-  //Functions
-  getActualIndex() {
-    return this.index + this.page * 10
+    this.updateControls({ index: this.actualIndex - 1 })
   }
 
   updateEmbed() {
@@ -242,10 +142,10 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   getCurrentEmbed() {
-    const { author, title, url, image } = this.queue[this.index]
+    const { author, title, url, image } = this._queue[this._index]
     this.currentEmbed = new Discord.MessageEmbed()
       .setColor('#0099ff')
-      .setAuthor(`Current playing Song ${this.getActualIndex() + 1} from ${author}`)
+      .setAuthor(`Current playing Song ${this.actualIndex + 1} from ${author}`)
       .setTitle(title)
       .setURL(url)
       .setThumbnail(
@@ -264,15 +164,15 @@ export class QueueClass extends VoiceChannelClass {
 
   sendQueueEmbed(channel: TextChannel) {
     const QueueEmbed = new FieldsEmbed()
-    this.queuePage = this.page
+    this._queuePage = this._page
     QueueEmbed.embed.setColor('#0099ff')
     QueueEmbed.embed.setTitle('Current Queue')
     QueueEmbed.setChannel(channel)
     QueueEmbed.setElementsPerPage(10)
     QueueEmbed.setAuthorizedUsers([])
-    QueueEmbed.setArray(this.queue)
+    QueueEmbed.setArray(this._queue)
 
-    QueueEmbed.embed.setFooter(`Page ${this.page + 1} of ${Math.floor(this.getLength / 10) + 1}`)
+    QueueEmbed.embed.setFooter(`Page ${this._page + 1} of ${Math.floor(this.length / 10) + 1}`)
     QueueEmbed.formatField('Musics', i => {
       const { index, title } = i as Music
       return `**Song ${index + 1}** -- ${title}`
@@ -282,25 +182,81 @@ export class QueueClass extends VoiceChannelClass {
     QueueEmbed.setFunctionEmojis({
       '⬅️': async (user, instance) => {
         //console.log('queuePage', this.queuePage - 1)
-        const data = await getQueueTitle(this.getChannel!.id, this.queueId, this.queuePage - 1)
+        const data = await getQueueTitle(this.getChannel!.id, this._queueId, this._queuePage - 1)
         if (!data) return
         const { queue, page } = data
-        this.queuePage--
-        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(this.length / 10) + 1}`)
+        this._queuePage--
+        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(this._length / 10) + 1}`)
         QueueEmbed.setArray(queue)
       },
       '➡️': async (user, instance) => {
         //console.log('queuePage', this.queuePage + 1)
-        const data = await getQueueTitle(this.getChannel!.id, this.queueId, this.queuePage + 1)
+        const data = await getQueueTitle(this.getChannel!.id, this._queueId, this._queuePage + 1)
         if (!data) return
         const { queue, page } = data
-        this.queuePage++
-        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(this.length / 10) + 1}`)
+        this._queuePage++
+        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(this._length / 10) + 1}`)
         QueueEmbed.setArray(queue)
       },
     })
-    console.log(QueueEmbed.embed.fields[0].value)
     //channel.send({ embeds: [QueueEmbed.embed] })
+  }
+
+  //Getters and Setters
+
+  set index(index: number) {
+    if (index < this._length && this._length !== 0) {
+      this.updateControls({ index })
+    }
+  }
+
+  get index() {
+    return this._index
+  }
+
+  get actualIndex() {
+    return this._index + this._page * 10
+  }
+
+  get queue() {
+    return this._queue
+  }
+
+  get length() {
+    return this._length
+  }
+
+  get shuffle() {
+    return this._shuffle
+  }
+
+  get page() {
+    return this._page
+  }
+
+  set time(time: number) {
+    this._time = time
+  }
+
+  get time() {
+    return this._time
+  }
+
+  set isPaused(paused: boolean) {
+    super.player.pause(paused)
+    this._isPaused = paused
+  }
+
+  get isPaused() {
+    return this._isPaused
+  }
+
+  get events() {
+    return this._events
+  }
+
+  set events(events: QueueEvents) {
+    this._events = events
   }
 }
 

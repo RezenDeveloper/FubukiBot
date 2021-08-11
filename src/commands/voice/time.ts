@@ -16,7 +16,7 @@ export const time = (message: Message, currentQueue: QueueClass) => {
     const hours = hasHours ? time.split(':')[0] : '0'
 
     const total = parseFloat(seconds) + parseFloat(minutes) * 60 + parseFloat(hours) * 60 * 60
-    currentQueue.setTime = total
+    currentQueue.time = total
     channel.send('May not work to some videos, not my fault!')
     playCurrentMusic(currentQueue)
     message.react(getCheckEmote(message))

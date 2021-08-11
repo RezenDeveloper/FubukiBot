@@ -92,11 +92,12 @@ const isOnChannel = (memberChannel: VoiceChannel | null | undefined, needVoice: 
     if (!memberChannel) return resolve(false)
 
     if (!currentQueue.connection || (currentQueue.getChannel !== memberChannel && needVoice)) {
-      joinVoiceChannel({
+      const connection = joinVoiceChannel({
         channelId: memberChannel.id,
         guildId: memberChannel.guild.id,
         adapterCreator: memberChannel.guild.voiceAdapterCreator,
       })
+      connection.subscribe(currentQueue.player)
       currentQueue.setChannel(memberChannel)
       currentQueue.startWatch()
       resolve(true)
