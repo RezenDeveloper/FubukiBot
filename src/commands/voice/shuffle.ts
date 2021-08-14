@@ -25,7 +25,7 @@ export const shuffle = async (message: Message, currentQueue: QueueClass) => {
     return
   }
   currentQueue.shuffle.isShuffle = true
-  currentQueue.shuffle.setShuffleIndex()
+  currentQueue.shuffle.nextShuffleIndex()
   message.react(getCheckEmote(message))
   channel.send(`Shuffle mode on!`)
 }

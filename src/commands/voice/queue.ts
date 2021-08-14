@@ -23,7 +23,11 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
   } else {
     console.log(number)
     if (number <= currentQueue.length && number > 0) {
-      currentQueue.index = number - 1
+      const { isShuffle } = currentQueue.shuffle
+      const index = number - 1
+
+      if (isShuffle) currentQueue.shuffle.addToShuffleList(index)
+      currentQueue.index = index
       message.react(getCheckEmote(message))
     } else {
       channel.send('This is not a valid number')

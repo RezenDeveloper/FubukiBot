@@ -15,10 +15,13 @@ export const prev = async (message: Message, currentQueue: QueueClass) => {
     return
   }
   if (currentQueue.shuffle.isShuffle) {
-    currentQueue.shuffle.prevShuffleIndex().catch(error => {
+    try {
+      await currentQueue.shuffle.prevShuffleIndex()
+      message.react(getCheckEmote(message))
+    } catch (error) {
       channel.send(`${error} ${name}!`)
       message.react(getErrorEmote())
-    })
+    }
     return
   }
   if (index > 0) {
@@ -32,6 +35,7 @@ export const prev = async (message: Message, currentQueue: QueueClass) => {
 
 export const next = async (message: Message, currentQueue: QueueClass) => {
   const index = currentQueue.actualIndex
+  const isShuffle = currentQueue.shuffle.isShuffle
   const length = currentQueue.length
   const { channel } = message
   const name = await getNickname(message)
@@ -41,6 +45,16 @@ export const next = async (message: Message, currentQueue: QueueClass) => {
     message.react(getErrorEmote())
     return
   }
+
+  if (isShuffle) {
+    await currentQueue.shuffle.nextShuffleIndex().catch(error => {
+      channel.send(`This is the last song ${name}!`)
+      message.react(getErrorEmote())
+    })
+    message.react(getCheckEmote(message))
+    return
+  }
+
   if (index + 1 < length) {
     currentQueue.nextIndex()
     message.react(getCheckEmote(message))

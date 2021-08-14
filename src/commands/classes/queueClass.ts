@@ -123,9 +123,6 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   nextIndex() {
-    console.log('isShuffle', this.shuffle.isShuffle)
-    if (this.shuffle.isShuffle) return this.shuffle.setShuffleIndex()
-    console.log('passou')
     this.updateControls({ index: this.actualIndex + 1 })
   }
 

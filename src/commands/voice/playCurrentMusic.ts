@@ -48,11 +48,11 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
   if (currentQueue.events.hasIdle) return
   currentQueue.events.hasIdle = true
   console.log('idle setted')
-  player.on(AudioPlayerStatus.Idle, () => {
+  player.on(AudioPlayerStatus.Idle, async () => {
     if (currentQueue.length === 0) return console.log('no queue')
     console.log('idle')
-    const { isShuffle, setShuffleIndex } = currentQueue.shuffle
-    if (isShuffle) return setShuffleIndex()
+    const { isShuffle } = currentQueue.shuffle
+    if (isShuffle) return await currentQueue.shuffle.nextShuffleIndex()
 
     const newIndex = currentQueue.actualIndex + 1
     if (newIndex < currentQueue.length) {
