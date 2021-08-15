@@ -19,7 +19,7 @@ export const time = (message: Message, currentQueue: QueueClass) => {
     currentQueue.time = total
     channel.send('May not work to some videos, not my fault!')
     playCurrentMusic(currentQueue)
-    message.react(getCheckEmote(message))
+    message.react(getCheckEmote())
   } else {
     channel.send('Please send a valid time (HH:MM:SS)')
     message.react(getErrorEmote())

@@ -89,8 +89,8 @@ export const sauce = async (message: Message) => {
           value: studios.map(({ name }) => name).join(', '),
         }
       )
-    channel.send(SauceEmbed)
-    message.react(getCheckEmote(message))
+    channel.send({ embeds: [SauceEmbed] })
+    message.react(getCheckEmote())
   } catch (err) {
     channel.send(`Sorry ${await getNickname(message)}, there is something wrong with the MAL API, not my fault!`)
     message.react(getErrorEmote())

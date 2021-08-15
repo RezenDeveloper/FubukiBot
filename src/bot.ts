@@ -9,21 +9,24 @@ import { searchObj } from './commands/classes/commandClasses'
 
 import { handlePixivUrl } from './commands/text/pixivUrl'
 
-import { getConfig } from './utils/api/fubuki/config'
 import { updateUserChannel } from './utils/api/fubuki/user'
 import { sendErrorMessage } from './utils/utils'
+import { Server } from './commands/classes/server'
 
 const { TOKEN } = process.env
 export const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
 })
 
+export const server = new Server()
+
 client.on('ready', async () => {
   console.log('Ready!')
 })
 
 client.on('messageCreate', async message => {
-  const configData = await getConfig()
+  const configData = server.config
+
   if (!configData) return sendErrorMessage(message.channel as TextChannel)
   if (message.author.id === configData.botId) return
 
@@ -39,8 +42,7 @@ client.on('messageCreate', async message => {
 })
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
-  const configData = await getConfig()
-  if (!configData) return
+  const configData = server.config
   const serverId = oldState.guild.id || newState.guild.id
   const currentQueue = getCurrentQueue(serverId)
 

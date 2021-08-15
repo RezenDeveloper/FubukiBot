@@ -20,7 +20,7 @@ export const play = async (message: Message, currentQueue: QueueClass, add?: boo
     const { title, author, itemCount } = data
 
     channel.send(`${add ? 'Added' : 'Playing'} the playlist **${title}**\nFrom ${author} with ${itemCount} songs!`)
-    message.react(getCheckEmote(message))
+    message.react(getCheckEmote())
   }
   //Is a valid url
   else if (ytdl.validateURL(searchParam)) {
@@ -29,7 +29,7 @@ export const play = async (message: Message, currentQueue: QueueClass, add?: boo
     const { title } = data
 
     sendTitle(channel, title, add ? 'Add' : 'Play')
-    message.react(getCheckEmote(message))
+    message.react(getCheckEmote())
   }
   //It's a search query
   else {
@@ -40,7 +40,7 @@ export const play = async (message: Message, currentQueue: QueueClass, add?: boo
     const { title } = data
 
     sendTitle(channel, title, add ? 'Add' : 'Play')
-    message.react(getCheckEmote(message))
+    message.react(getCheckEmote())
   }
 }
 

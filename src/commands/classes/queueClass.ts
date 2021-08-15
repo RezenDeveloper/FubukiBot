@@ -9,6 +9,7 @@ import { FieldsEmbed } from 'discord-paginationembed'
 import { apolloClient } from '../../utils/api/fubuki/fubuki'
 import { AudioPlayerStatus } from '@discordjs/voice'
 import { Shuffle } from './shuffle'
+import { CurrentPlaying } from './currentPlaying'
 
 const classArray: QueueClass[] = []
 const serverIdArray: string[] = []
@@ -17,9 +18,6 @@ interface QueueEvents {
   hasIdle: boolean
 }
 export class QueueClass extends VoiceChannelClass {
-  private _shuffle: Shuffle
-  private currentEmbed?: Discord.MessageEmbed
-  private currentEmbedMessage?: Discord.Message
   private _queue: Music[]
   private _index: number
   private _page: number
@@ -28,7 +26,10 @@ export class QueueClass extends VoiceChannelClass {
   private _length: number
   private _queuePage: number
   private _queueId: string
+
   private _events: QueueEvents
+  private _shuffle: Shuffle
+  private _currentPlaying: CurrentPlaying
 
   constructor() {
     super()
@@ -38,6 +39,7 @@ export class QueueClass extends VoiceChannelClass {
     this._index = 0
     this._time = 0
     this._shuffle = new Shuffle(this)
+    this._currentPlaying = new CurrentPlaying(this)
     this._isPaused = super.player.state.status === AudioPlayerStatus.Paused ? true : false
     this._queuePage = 0
     this._queueId = ''
@@ -45,8 +47,6 @@ export class QueueClass extends VoiceChannelClass {
       hasIdle: false,
     }
   }
-
-  //DataBase
 
   startWatch = async () => {
     const serverId = super.getChannel!.guild.id
@@ -77,7 +77,6 @@ export class QueueClass extends VoiceChannelClass {
             page,
           },
         })
-        console.log('cache updated')
         this._queue = queue
       }
 
@@ -104,7 +103,7 @@ export class QueueClass extends VoiceChannelClass {
         }
       }
 
-      this.updateEmbed()
+      this._currentPlaying.updateEmbed()
     })
   }
 
@@ -128,35 +127,6 @@ export class QueueClass extends VoiceChannelClass {
 
   prevIndex() {
     this.updateControls({ index: this.actualIndex - 1 })
-  }
-
-  updateEmbed() {
-    const messageEmbed = this.currentEmbedMessage
-
-    if (messageEmbed) {
-      messageEmbed.edit({ embeds: [this.getCurrentEmbed()] })
-    }
-  }
-
-  getCurrentEmbed() {
-    const { author, title, url, image } = this._queue[this._index]
-    this.currentEmbed = new Discord.MessageEmbed()
-      .setColor('#0099ff')
-      .setAuthor(`Current playing Song ${this.actualIndex + 1} from ${author}`)
-      .setTitle(title)
-      .setURL(url)
-      .setThumbnail(
-        image ||
-          'https://cdn.discordapp.com/attachments/780268482519892009/823628073782083594/83372180_p0_master1200.png'
-      )
-
-    return this.currentEmbed
-  }
-
-  sendCurrentEmbed(channel: TextBasedChannels) {
-    channel.send({ embeds: [this.getCurrentEmbed()] }).then(message => {
-      this.currentEmbedMessage = message
-    })
   }
 
   sendQueueEmbed(channel: TextChannel) {
@@ -254,6 +224,10 @@ export class QueueClass extends VoiceChannelClass {
 
   set events(events: QueueEvents) {
     this._events = events
+  }
+
+  get currentPlaying() {
+    return this._currentPlaying
   }
 }
 

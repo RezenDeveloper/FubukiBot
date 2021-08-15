@@ -18,7 +18,7 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
   if (!number) {
     currentQueue.sendQueueEmbed(channel as TextChannel)
     setTimeout(() => {
-      currentQueue.sendCurrentEmbed(channel)
+      currentQueue.currentPlaying.sendCurrentEmbed(channel)
     }, 1000)
   } else {
     console.log(number)
@@ -28,7 +28,7 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
 
       if (isShuffle) currentQueue.shuffle.addToShuffleList(index)
       currentQueue.index = index
-      message.react(getCheckEmote(message))
+      message.react(getCheckEmote())
     } else {
       channel.send('This is not a valid number')
       message.react(getErrorEmote())

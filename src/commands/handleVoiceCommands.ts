@@ -1,11 +1,21 @@
-import { Message, StageChannel, VoiceChannel } from 'discord.js'
+import { Message, VoiceChannel } from 'discord.js'
 import { getNickname, hasCommands } from '../utils/utils'
-import { play, pause, queue, playDirection, shuffle, time, search, clear, leave } from './voice/getVoiceCommands'
+import {
+  play,
+  pause,
+  queue,
+  playDirection,
+  shuffle,
+  time,
+  search,
+  clear,
+  leave,
+  currentPlaying,
+} from './voice/getVoiceCommands'
 import { getCurrentQueue } from './classes/queueClass'
 import type { QueueClass } from './classes/queueClass'
-import { getConfig } from '../utils/api/fubuki/config'
-import { insertServer } from '../utils/api/fubuki/server'
 import { joinVoiceChannel } from '@discordjs/voice'
+import { server } from '../bot'
 
 export const searchWaiting = async (message: Message) => {
   const currentQueue = getCurrentQueue(message.guild!.id)
@@ -13,7 +23,7 @@ export const searchWaiting = async (message: Message) => {
 }
 
 export const isVoiceCommand = async (message: Message) => {
-  const configData = await getConfig()
+  const configData = server.config
   if (!configData) return
   const { content, channel } = message
   const { prefix, voiceCommands } = configData
@@ -56,6 +66,9 @@ const handleVoiceCommands = async (message: Message, commandObj?: IcommandVoice)
       break
     case 'queue':
       queue(message, currentQueue)
+      break
+    case 'currentPlaying':
+      currentPlaying(message, currentQueue)
       break
     case 'next':
       await playDirection.next(message, currentQueue)

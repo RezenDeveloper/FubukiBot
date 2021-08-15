@@ -8,5 +8,5 @@ export const clear = async (message: Message) => {
   if (!data) return sendErrorMessage(message.channel as TextChannel)
   getCurrentQueue(message.guild!.id).clearQueue()
 
-  message.react(getCheckEmote(message))
+  message.react(getCheckEmote())
 }

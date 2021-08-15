@@ -36,7 +36,7 @@ export const getConfig = async () => {
         }
       `,
     })
-    return data.getConfig as Iconfig
+    return data.getConfig as ServerConfig
   } catch (error) {
     SendError('getConfig', error)
     return null

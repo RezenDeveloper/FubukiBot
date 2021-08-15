@@ -6,5 +6,5 @@ export const avatar = async (message: Message) => {
   const url = author.avatarURL({ dynamic: true, size: 4096 })!
 
   AvatarEmbed.setImage(url)
-  channel.send(AvatarEmbed)
+  channel.send({ embeds: [AvatarEmbed] })
 }

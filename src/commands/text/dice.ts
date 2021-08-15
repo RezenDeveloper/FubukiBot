@@ -1,8 +1,4 @@
 import { Message } from 'discord.js'
-interface iRandomFubuki {
-  name: string
-  url: string
-}
 
 export const d100 = async (message: Message) => {
   const { channel } = message
@@ -14,7 +10,7 @@ export const d100 = async (message: Message) => {
     if (dice == 100) {
       channel.send(`${dice}! すごい!!`)
     } else {
-      channel.send(dice)
+      channel.send(dice.toString())
     }
   }
 }
@@ -28,7 +24,7 @@ export const d20 = async (message: Message) => {
     if (dice == 20) {
       channel.send(`${dice}! おめでとう!!`)
     } else {
-      channel.send(dice)
+      channel.send(dice.toString())
     }
   }
 }

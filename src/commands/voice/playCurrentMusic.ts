@@ -18,7 +18,7 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
   let filter: Filter = 'audio'
 
   if (currentQueue.isPaused) currentQueue.isPaused = false
-  currentQueue.updateEmbed()
+  currentQueue.currentPlaying.updateEmbed()
 
   //console.log("index: "+index+" length: "+queue.length)
   //console.log('index++ '+ (index+1))

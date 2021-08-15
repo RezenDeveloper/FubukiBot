@@ -70,8 +70,8 @@ export const clearStatus = async () => {
   await client.user!.setActivity('')
 }
 
-export const getCheckEmote = (message: Message) => {
-  let reactionEmoji: EmojiResolvable | undefined = message.guild!.emojis.cache.find(emoji => emoji.name === 'jojokay')
+export const getCheckEmote = () => {
+  let reactionEmoji: EmojiResolvable | undefined = client.emojis.cache.find(emoji => emoji.name === 'jojokay')
   return (reactionEmoji = reactionEmoji ? reactionEmoji : '☑️')
 }
 

@@ -6,6 +6,6 @@ export const leave = (message: Message, currentQueue: QueueClass) => {
   if (currentQueue.getChannel) {
     currentQueue.index = 0
     currentQueue.endConnection()
-    message.react(getCheckEmote(message))
+    message.react(getCheckEmote())
   }
 }

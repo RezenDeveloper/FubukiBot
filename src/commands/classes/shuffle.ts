@@ -43,19 +43,11 @@ export class Shuffle {
 
       while (!pass) {
         index = Math.floor(Math.random() * queueLenght)
-        console.log('shuffle index', index)
         if (!this._shuffleList.includes(index)) {
           this.addToShuffleList(index)
           pass = true
         }
       }
-
-      console.log({
-        shuffleListLength: this._shuffleList.length,
-        queueLenght,
-        shuffleList: this._shuffleList,
-      })
-
       this.currentQueue.index = index
       resolve()
     }) as Promise<void>
@@ -71,11 +63,6 @@ export class Shuffle {
       this._shuffleList = this._shuffleList.slice(0, -1)
       const prevIndex = this._shuffleList[this._shuffleList.length - 1]
       this.currentQueue.index = prevIndex
-      console.log({
-        shuffleListLength: this._shuffleList.length,
-        queueLenght: this.currentQueue.length,
-        shuffleList: this._shuffleList,
-      })
       resolve(true)
     })
   }

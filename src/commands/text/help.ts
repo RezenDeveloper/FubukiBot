@@ -1,9 +1,11 @@
 import Discord, { Message } from 'discord.js'
-import { getConfig } from '../../utils/api/fubuki/config'
+import { server } from '../../bot'
 
 export const help = async (message: Message) => {
   const { channel } = message
-  const { prefix, voiceCommands, textCommands } = await getConfig()
+  const data = server.config
+
+  const { prefix, voiceCommands, textCommands } = data
 
   const chatValues = textCommands
     .filter(value => !value.isHidden)
@@ -25,5 +27,5 @@ export const help = async (message: Message) => {
     { name: 'Chat Commands', value: chatValues, inline: true },
     { name: 'Voice Commands', value: voiceValues, inline: true }
   )
-  channel.send(HelpEmbed)
+  channel.send({ embeds: [HelpEmbed] })
 }

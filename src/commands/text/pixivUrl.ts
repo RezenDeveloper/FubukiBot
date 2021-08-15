@@ -68,11 +68,11 @@ export const handlePixivUrl = async (message: Message) => {
             inline: true,
           }
         )
-      channel.send(PixivEmbed).then(async () => {
+      channel.send({ embeds: [PixivEmbed] }).then(async () => {
         const array = await attachArray
         array.forEach((value, index) => {
           if (!value) channel.send(`I couldn't send the image ${index + 1} because it has more than 8MB!`)
-          else channel.send(value)
+          else channel.send({ files: [value] })
         })
       })
     } else {
