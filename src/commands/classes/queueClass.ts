@@ -210,7 +210,7 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   set isPaused(paused: boolean) {
-    super.player.pause(paused)
+    paused ? super.player.pause() : super.player.unpause()
     this._isPaused = paused
   }
 
