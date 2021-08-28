@@ -79,7 +79,7 @@ export class QueueClass extends VoiceChannelClass {
           },
         })
         this._queue = queue
-        this._queueEmbed.updateEmbed(queue, page)
+        !this.shuffle.isShuffle && this._queueEmbed.updateEmbed(queue, page)
       }
 
       this._queueId = queueId

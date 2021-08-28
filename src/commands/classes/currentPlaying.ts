@@ -1,10 +1,11 @@
-import { Message, MessageEmbed, MessageReaction, TextBasedChannels, User } from 'discord.js'
+import { Message, MessageEmbed, MessageReaction, ReactionCollector, TextBasedChannels, User } from 'discord.js'
 import { server } from '../../bot'
 import { QueueClass } from './queueClass'
 
 export class CurrentPlaying {
   private _currentQueue: QueueClass
   private _message?: Message
+  private _collector?: ReactionCollector
 
   constructor(currentQueue: QueueClass) {
     this._currentQueue = currentQueue
@@ -31,15 +32,23 @@ export class CurrentPlaying {
       return ['⏮️', '⏸️', '⏭️'].includes(reaction.emoji.name) && user.id !== server.config.botId
     }
     const collector = message.createReactionCollector({ filter })
-    collector.on('collect', (reaction, user) => {
-      if (reaction.emoji.name === '⏮️') {
-        this._currentQueue.prevIndex()
+    if (this._collector) this._collector.stop()
+    this._collector = collector
+    collector.on('collect', async (reaction, user) => {
+      const validPrev = this._currentQueue.actualIndex > 0
+      const validNext = this._currentQueue.actualIndex + 1 < this._currentQueue.length
+      const isShuffle = this._currentQueue.shuffle.isShuffle
+
+      if (reaction.emoji.name === '⏮️' && validPrev) {
+        if (isShuffle) await this._currentQueue.shuffle.prevShuffleIndex()
+        else if (validPrev) this._currentQueue.prevIndex()
       }
       if (reaction.emoji.name === '⏸️') {
         this._currentQueue.pause(!this._currentQueue.isPaused)
       }
-      if (reaction.emoji.name === '⏭️') {
-        this._currentQueue.nextIndex()
+      if (reaction.emoji.name === '⏭️' && validNext) {
+        if (isShuffle) await this._currentQueue.shuffle.nextShuffleIndex()
+        else if (validNext) this._currentQueue.nextIndex()
       }
       reaction.users.remove(user.id)
     })

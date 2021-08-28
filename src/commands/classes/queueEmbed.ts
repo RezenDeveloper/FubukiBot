@@ -1,4 +1,12 @@
-import { EmbedFieldData, Message, MessageEmbed, MessageReaction, TextChannel, User } from 'discord.js'
+import {
+  EmbedFieldData,
+  Message,
+  MessageEmbed,
+  MessageReaction,
+  ReactionCollector,
+  TextChannel,
+  User,
+} from 'discord.js'
 import { server } from '../../bot'
 import { getQueueTitle } from '../../utils/api/fubuki/queue'
 import { QueueClass } from './queueClass'
@@ -13,6 +21,7 @@ export class QueueEmbed {
   private _page: number
   private _embed: MessageEmbed
   private _message?: Message
+  private _collector?: ReactionCollector
 
   constructor(currentQueue: QueueClass) {
     this._currentQueue = currentQueue
@@ -46,6 +55,8 @@ export class QueueEmbed {
       return ['⬅️', '➡️'].includes(reaction.emoji.name) && user.id !== server.config.botId
     }
     const collector = message.createReactionCollector({ filter })
+    if (this._collector) this._collector.stop()
+    this._collector = collector
     collector.on('collect', async (reaction, user) => {
       const channelId = this._currentQueue.getChannel!.id
       const queueId = this._currentQueue.queueId

@@ -14,7 +14,6 @@ export class Shuffle {
   addToShuffleList(index: number) {
     if (this._shuffleList.includes(index)) return { error: 'Shuffle - Already Played!' }
     this._shuffleList = [...this._shuffleList, index]
-    console.log(this._shuffleList)
     return { error: null }
   }
 
@@ -22,7 +21,6 @@ export class Shuffle {
     if (!this._shuffleList.includes(index)) return { error: 'Shuffle - Not played yet!' }
     const indexOfMusic = this._shuffleList.indexOf(index)
     this._shuffleList = this._shuffleList.slice(0, indexOfMusic + 1)
-    console.log(this._shuffleList)
     return { error: null }
   }
 
@@ -58,7 +56,6 @@ export class Shuffle {
       }
     }
     this.currentQueue.index = index
-    console.log(this._shuffleList)
     return { error: null }
   }
 
@@ -71,7 +68,6 @@ export class Shuffle {
     this._shuffleList = this._shuffleList.slice(0, -1)
     const prevIndex = this._shuffleList[this._shuffleList.length - 1]
     this.currentQueue.index = prevIndex
-    console.log(this._shuffleList)
     return { error: null }
   }
 }
