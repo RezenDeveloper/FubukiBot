@@ -21,7 +21,6 @@ export const updateUserChannel = async (userId: string, channelId: string) => {
       updated: true,
     }
   } catch (error) {
-    SendError('updateUser', error)
     return {
       updated: false,
     }
