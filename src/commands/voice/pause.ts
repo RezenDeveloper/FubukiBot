@@ -16,12 +16,12 @@ export const pause = async (message: Message, currentQueue: QueueClass) => {
   }
   if (voiceChannel) {
     if (currentQueue.isPaused) {
-      currentQueue.isPaused = false
+      currentQueue.pause(false)
 
       channel.send('<:Menacing:603270364314730526> Toki wa ugoki dasu! <:Menacing:603270364314730526>')
       message.react(getCheckEmote())
     } else {
-      currentQueue.isPaused = true
+      currentQueue.pause(true)
 
       channel.send('<:Menacing:603270364314730526> Toki wo Tomare! <:Menacing:603270364314730526>')
       message.react(getCheckEmote())

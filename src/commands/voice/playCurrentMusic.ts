@@ -2,6 +2,7 @@ import ytdl, { Filter } from 'ytdl-core'
 import { URL } from 'url'
 import type { QueueClass } from '../classes/queueClass'
 import { AudioPlayerStatus, createAudioResource, VoiceConnectionStatus } from '@discordjs/voice'
+import { SendError, sendErrorMessage } from '../../utils/utils'
 
 const COOKIES = process.env.COOKIES
 
@@ -17,7 +18,7 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
   let time = currentQueue.time.toString()
   let filter: Filter = 'audio'
 
-  if (currentQueue.isPaused) currentQueue.isPaused = false
+  if (currentQueue.isPaused) currentQueue.pause(false)
   currentQueue.currentPlaying.updateEmbed()
 
   //console.log("index: "+index+" length: "+queue.length)
@@ -44,15 +45,19 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
   })
 
   player.play(createAudioResource(video))
-
   if (currentQueue.events.hasIdle) return
   currentQueue.events.hasIdle = true
-  console.log('idle setted')
+
+  console.log('player events setted')
+
   player.on(AudioPlayerStatus.Idle, async () => {
     if (currentQueue.length === 0) return console.log('no queue')
-    console.log('idle')
-    const { isShuffle } = currentQueue.shuffle
-    if (isShuffle) return await currentQueue.shuffle.nextShuffleIndex()
+
+    if (currentQueue.shuffle.isShuffle) {
+      const { error } = await currentQueue.shuffle.nextShuffleIndex()
+      if (error) console.log('last shuffle index')
+      return
+    }
 
     const newIndex = currentQueue.actualIndex + 1
     if (newIndex < currentQueue.length) {
@@ -61,5 +66,9 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
     } else {
       console.log('last index')
     }
+  })
+
+  player.on('error', error => {
+    SendError('player', error)
   })
 }

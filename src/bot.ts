@@ -15,7 +15,12 @@ import { Server } from './commands/classes/server'
 
 const { TOKEN } = process.env
 export const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_VOICE_STATES,
+    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+  ],
 })
 
 export const server = new Server()
@@ -25,8 +30,9 @@ client.on('ready', async () => {
 })
 
 client.on('messageCreate', async message => {
-  const configData = server.config
+  if (message.content === 'Something went wrong') return
 
+  const configData = server.config
   if (!configData) return sendErrorMessage(message.channel as TextChannel)
   if (message.author.id === configData.botId) return
 

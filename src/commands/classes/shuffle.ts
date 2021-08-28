@@ -12,8 +12,18 @@ export class Shuffle {
   }
 
   addToShuffleList(index: number) {
-    if (this._shuffleList.includes(index)) return
+    if (this._shuffleList.includes(index)) return { error: 'Shuffle - Already Played!' }
     this._shuffleList = [...this._shuffleList, index]
+    console.log(this._shuffleList)
+    return { error: null }
+  }
+
+  backToIndex(index: number) {
+    if (!this._shuffleList.includes(index)) return { error: 'Shuffle - Not played yet!' }
+    const indexOfMusic = this._shuffleList.indexOf(index)
+    this._shuffleList = this._shuffleList.slice(0, indexOfMusic + 1)
+    console.log(this._shuffleList)
+    return { error: null }
   }
 
   clearShuffleList() {
@@ -34,36 +44,34 @@ export class Shuffle {
   }
 
   nextShuffleIndex() {
-    return new Promise((resolve, reject) => {
-      const queueLenght = this.currentQueue.length
-      let pass = false
-      let index = 0
+    const queueLenght = this.currentQueue.length
+    let pass = false
+    let index = 0
 
-      if (this._shuffleList.length === queueLenght) return reject('This is the last music')
+    if (this._shuffleList.length === queueLenght) return { error: 'This is the last music' }
 
-      while (!pass) {
-        index = Math.floor(Math.random() * queueLenght)
-        if (!this._shuffleList.includes(index)) {
-          this.addToShuffleList(index)
-          pass = true
-        }
+    while (!pass) {
+      index = Math.floor(Math.random() * queueLenght)
+      if (!this._shuffleList.includes(index)) {
+        this.addToShuffleList(index)
+        pass = true
       }
-      this.currentQueue.index = index
-      resolve()
-    }) as Promise<void>
+    }
+    this.currentQueue.index = index
+    console.log(this._shuffleList)
+    return { error: null }
   }
 
   prevShuffleIndex() {
-    return new Promise((resolve, reject) => {
-      const arrayLength = this._shuffleList.length - 1
-      if (arrayLength <= 0) {
-        return reject('This is the first song')
-      }
+    const arrayLength = this._shuffleList.length - 1
+    if (arrayLength <= 0) {
+      return { error: 'This is the first song' }
+    }
 
-      this._shuffleList = this._shuffleList.slice(0, -1)
-      const prevIndex = this._shuffleList[this._shuffleList.length - 1]
-      this.currentQueue.index = prevIndex
-      resolve(true)
-    })
+    this._shuffleList = this._shuffleList.slice(0, -1)
+    const prevIndex = this._shuffleList[this._shuffleList.length - 1]
+    this.currentQueue.index = prevIndex
+    console.log(this._shuffleList)
+    return { error: null }
   }
 }

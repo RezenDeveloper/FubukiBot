@@ -15,12 +15,12 @@ export const prev = async (message: Message, currentQueue: QueueClass) => {
     return
   }
   if (currentQueue.shuffle.isShuffle) {
-    try {
-      await currentQueue.shuffle.prevShuffleIndex()
-      message.react(getCheckEmote())
-    } catch (error) {
+    const { error } = await currentQueue.shuffle.prevShuffleIndex()
+    if (error) {
       channel.send(`${error} ${name}!`)
       message.react(getErrorEmote())
+    } else {
+      message.react(getCheckEmote())
     }
     return
   }
@@ -47,11 +47,13 @@ export const next = async (message: Message, currentQueue: QueueClass) => {
   }
 
   if (isShuffle) {
-    await currentQueue.shuffle.nextShuffleIndex().catch(error => {
-      channel.send(`This is the last song ${name}!`)
+    const { error } = await currentQueue.shuffle.nextShuffleIndex()
+    if (error) {
+      channel.send(`${error} ${name}!`)
       message.react(getErrorEmote())
-    })
-    message.react(getCheckEmote())
+    } else {
+      message.react(getCheckEmote())
+    }
     return
   }
 

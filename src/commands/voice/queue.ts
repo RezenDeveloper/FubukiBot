@@ -16,17 +16,20 @@ export const queue = async (message: Message, currentQueue: QueueClass) => {
   const number = parseFloat(content.split(' ')[1])
 
   if (!number) {
-    currentQueue.sendQueueEmbed(channel as TextChannel)
+    currentQueue.queueEmbed.sendEmbed(channel as TextChannel)
     setTimeout(() => {
       currentQueue.currentPlaying.sendCurrentEmbed(channel)
-    }, 1000)
+    }, 500)
   } else {
-    console.log(number)
     if (number <= currentQueue.length && number > 0) {
       const { isShuffle } = currentQueue.shuffle
       const index = number - 1
 
-      if (isShuffle) currentQueue.shuffle.addToShuffleList(index)
+      if (isShuffle) {
+        const { error } = currentQueue.shuffle.addToShuffleList(index)
+        if (error) currentQueue.shuffle.backToIndex(index)
+      }
+
       currentQueue.index = index
       message.react(getCheckEmote())
     } else {

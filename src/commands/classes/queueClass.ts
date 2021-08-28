@@ -10,6 +10,7 @@ import { apolloClient } from '../../utils/api/fubuki/fubuki'
 import { AudioPlayerStatus } from '@discordjs/voice'
 import { Shuffle } from './shuffle'
 import { CurrentPlaying } from './currentPlaying'
+import { QueueEmbed } from './queueEmbed'
 
 const classArray: QueueClass[] = []
 const serverIdArray: string[] = []
@@ -24,12 +25,12 @@ export class QueueClass extends VoiceChannelClass {
   private _time: number
   private _isPaused: boolean
   private _length: number
-  private _queuePage: number
   private _queueId: string
 
   private _events: QueueEvents
   private _shuffle: Shuffle
   private _currentPlaying: CurrentPlaying
+  private _queueEmbed: QueueEmbed
 
   constructor() {
     super()
@@ -40,8 +41,8 @@ export class QueueClass extends VoiceChannelClass {
     this._time = 0
     this._shuffle = new Shuffle(this)
     this._currentPlaying = new CurrentPlaying(this)
+    this._queueEmbed = new QueueEmbed(this)
     this._isPaused = super.player.state.status === AudioPlayerStatus.Paused ? true : false
-    this._queuePage = 0
     this._queueId = ''
     this._events = {
       hasIdle: false,
@@ -78,6 +79,7 @@ export class QueueClass extends VoiceChannelClass {
           },
         })
         this._queue = queue
+        this._queueEmbed.updateEmbed(queue, page)
       }
 
       this._queueId = queueId
@@ -129,44 +131,9 @@ export class QueueClass extends VoiceChannelClass {
     this.updateControls({ index: this.actualIndex - 1 })
   }
 
-  sendQueueEmbed(channel: TextChannel) {
-    const QueueEmbed = new FieldsEmbed()
-    this._queuePage = this._page
-    QueueEmbed.embed.setColor('#0099ff')
-    QueueEmbed.embed.setTitle('Current Queue')
-    QueueEmbed.setChannel(channel)
-    QueueEmbed.setElementsPerPage(10)
-    QueueEmbed.setAuthorizedUsers([])
-    QueueEmbed.setArray(this._queue)
-
-    QueueEmbed.embed.setFooter(`Page ${this._page + 1} of ${Math.floor(this.length / 10) + 1}`)
-    QueueEmbed.formatField('Musics', i => {
-      const { index, title } = i as Music
-      return `**Song ${index + 1}** -- ${title}`
-    })
-    QueueEmbed.setDisabledNavigationEmojis(['all'])
-    QueueEmbed.setTimeout(0)
-    QueueEmbed.setFunctionEmojis({
-      '⬅️': async (user, instance) => {
-        //console.log('queuePage', this.queuePage - 1)
-        const data = await getQueueTitle(this.getChannel!.id, this._queueId, this._queuePage - 1)
-        if (!data) return
-        const { queue, page } = data
-        this._queuePage--
-        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(this._length / 10) + 1}`)
-        QueueEmbed.setArray(queue)
-      },
-      '➡️': async (user, instance) => {
-        //console.log('queuePage', this.queuePage + 1)
-        const data = await getQueueTitle(this.getChannel!.id, this._queueId, this._queuePage + 1)
-        if (!data) return
-        const { queue, page } = data
-        this._queuePage++
-        QueueEmbed.embed.setFooter(`Page ${page + 1} of ${Math.floor(this._length / 10) + 1}`)
-        QueueEmbed.setArray(queue)
-      },
-    })
-    //channel.send({ embeds: [QueueEmbed.embed] })
+  pause(paused: boolean) {
+    paused ? super.player.pause() : super.player.unpause()
+    this._isPaused = paused
   }
 
   //Getters and Setters
@@ -189,6 +156,14 @@ export class QueueClass extends VoiceChannelClass {
     return this._queue
   }
 
+  get queueId() {
+    return this._queueId
+  }
+
+  get queueEmbed() {
+    return this._queueEmbed
+  }
+
   get length() {
     return this._length
   }
@@ -207,11 +182,6 @@ export class QueueClass extends VoiceChannelClass {
 
   get time() {
     return this._time
-  }
-
-  set isPaused(paused: boolean) {
-    paused ? super.player.pause() : super.player.unpause()
-    this._isPaused = paused
   }
 
   get isPaused() {
