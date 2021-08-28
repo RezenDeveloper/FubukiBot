@@ -1,8 +1,12 @@
-import { Message } from 'discord.js';
-import { getCheckEmote } from '../../utils/utils';
-import type { QueueClass } from '../queueClass';
+import { Message, TextChannel } from 'discord.js'
+import { clearQueue } from '../../utils/api/fubuki/queue'
+import { getCheckEmote, sendErrorMessage } from '../../utils/utils'
+import { getCurrentQueue } from '../classes/queueClass'
 
-export const clear = (message:Message, currentQueue:QueueClass) => {
-    currentQueue.clearQueue()
-    message.react(getCheckEmote(message))
+export const clear = async (message: Message) => {
+  const data = await clearQueue(message.guild!.id)
+  if (!data) return sendErrorMessage(message.channel as TextChannel)
+  getCurrentQueue(message.guild!.id).clearQueue()
+
+  message.react(getCheckEmote())
 }

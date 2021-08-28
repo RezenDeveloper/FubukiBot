@@ -1,63 +1,77 @@
-import Discord from 'discord.js'
+import { TextChannel, WSEventType, Client, Intents } from 'discord.js'
 
 import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'
-import { searchWaiting, isVoiceCommand } from './commands/handleVoiceCommands'
+import { isVoiceCommand, searchWaiting } from './commands/handleVoiceCommands'
 import { isAdminCommand } from './commands/handleAdminCommands'
-import { searchObj } from './commands/commandClasses'
-import { getCurrentQueue, updateCurrentQueue } from './commands/queueClass'
+import { getCurrentQueue, updateCurrentQueue } from './commands/classes/queueClass'
+import { searchObj } from './commands/classes/commandClasses'
 
 import { handlePixivUrl } from './commands/text/pixivUrl'
 
-import { getConfig } from './utils/api/fubuki/config'
-import { updateUser } from './utils/api/fubuki/users'
+import { updateUserChannel } from './utils/api/fubuki/user'
+import { sendErrorMessage } from './utils/utils'
+import { Server } from './commands/classes/server'
 
-const { TOKEN } = process.env;
-export const client = new Discord.Client()
+const { TOKEN } = process.env
+export const client = new Client({
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_VOICE_STATES,
+    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+  ],
+})
 
-client.once('ready', async () => {
-    console.log('Ready!')
-});
+export const server = new Server()
 
-client.on('message', async message => {
-    const configData = await getConfig()
-    
-    if(searchObj.getWaiting) return await searchWaiting(message)
+client.on('ready', async () => {
+  console.log('Ready!')
+})
 
-    if(message.content.charAt(0) === configData.prefix){
-        if(await isTextCommand(message)) return
-        if(await isVoiceCommand(message)) return
-        if(await isAdminCommand(message)) return
-    }
+client.on('messageCreate', async message => {
+  if (message.content === 'Something went wrong') return
 
-    handlePixivUrl(message)
-});
+  const configData = server.config
+  if (!configData) return sendErrorMessage(message.channel as TextChannel)
+  if (message.author.id === configData.botId) return
+
+  if (searchObj.getWaiting) return await searchWaiting(message)
+
+  if (message.content.charAt(0) === configData.prefix) {
+    if (await isTextCommand(message)) return
+    if (await isVoiceCommand(message)) return
+    if (await isAdminCommand(message)) return
+  }
+
+  handlePixivUrl(message)
+})
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
-    const configData = await getConfig()
-    const serverId = oldState.guild.id || newState.guild.id
-    const currentQueue = getCurrentQueue(serverId)
-    
-    const userId = newState.member?.user.id
-    const currentChannel = newState.channelID || ''
+  const configData = server.config
+  const serverId = oldState.guild.id || newState.guild.id
+  const currentQueue = getCurrentQueue(serverId)
 
-    if(userId){
-        updateUser(userId, { currentChannel })
-    }
-    
-    if(currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === currentChannel) {
-        currentQueue.clearLeaveTimeout()
-    }
+  const userId = newState.member?.user.id
+  const currentChannel = newState.channelId || ''
 
-    if(currentQueue.getChannel && !currentQueue.getLeaveTimeout){
-        const members = currentQueue.getChannel.members.map(value => value.user.id)
-        if(!members.length) return
-        
-        if(members[0] === configData.botId){
-            currentQueue.leaveIn(60)
-            updateCurrentQueue(serverId, currentQueue)
-        }
+  if (userId) {
+    updateUserChannel(userId, currentChannel)
+  }
+
+  if (currentQueue.getLeaveTimeout && currentQueue.getChannel?.id === currentChannel) {
+    currentQueue.clearLeaveTimeout()
+  }
+
+  if (currentQueue.getChannel && !currentQueue.getLeaveTimeout) {
+    const members = currentQueue.getChannel.members.map(value => value.user.id)
+    if (!members.length) return
+
+    if (members[0] === configData.botId) {
+      currentQueue.leaveIn(60)
+      updateCurrentQueue(serverId, currentQueue)
     }
+  }
 })
 
 client.login(TOKEN)

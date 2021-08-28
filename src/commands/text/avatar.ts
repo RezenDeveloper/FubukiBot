@@ -1,10 +1,10 @@
 import Discord, { Message } from 'discord.js'
 
-export const avatar = (message:Message) => {
-    const AvatarEmbed = new Discord.MessageEmbed();
-    const { author, channel } = message
-    const url = author.avatarURL()!.split('.webp')[0]+".png?size=1024";
-    
-    AvatarEmbed.setImage(url);
-    channel.send(AvatarEmbed);
-} 
+export const avatar = async (message: Message) => {
+  const AvatarEmbed = new Discord.MessageEmbed()
+  const { author, channel } = message
+  const url = author.avatarURL({ dynamic: true, size: 4096 })!
+
+  AvatarEmbed.setImage(url)
+  channel.send({ embeds: [AvatarEmbed] })
+}
