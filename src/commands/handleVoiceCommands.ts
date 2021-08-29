@@ -98,7 +98,7 @@ const handleVoiceCommands = async (message: Message, commandObj?: IcommandVoice)
 }
 
 const isOnChannel = (memberChannel: VoiceChannel | null | undefined, needVoice: boolean, currentQueue: QueueClass) => {
-  return new Promise((resolve: (res: boolean) => void) => {
+  return new Promise(async (resolve: (res: boolean) => void) => {
     if (currentQueue.getChannel && !needVoice) {
       return resolve(true)
     }
@@ -111,7 +111,7 @@ const isOnChannel = (memberChannel: VoiceChannel | null | undefined, needVoice: 
         adapterCreator: memberChannel.guild.voiceAdapterCreator,
       })
       connection.subscribe(currentQueue.player)
-      currentQueue.setChannel(memberChannel)
+      await currentQueue.setChannel(memberChannel)
       currentQueue.startWatch()
       resolve(true)
     } else {

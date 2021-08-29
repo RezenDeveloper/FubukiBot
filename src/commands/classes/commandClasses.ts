@@ -54,7 +54,7 @@ export class VoiceChannelClass {
     const serverId = channel.guild.id
     const channelId = channel.id
 
-    insertServer({ serverId, channelId }).then(async data => {
+    return insertServer({ serverId, channelId }).then(async data => {
       if (data?.created) console.log('server created')
       if (data?.exists) {
         const currentDate = new Date()
@@ -67,9 +67,8 @@ export class VoiceChannelClass {
         if (updated) console.log('server updated')
         this._lastFetch = new Date()
       }
+      this._channel = channel
     })
-
-    this._channel = channel
   }
 
   get getChannel() {
