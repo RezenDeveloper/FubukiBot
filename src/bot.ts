@@ -2,10 +2,9 @@ import { TextChannel, WSEventType, Client, Intents } from 'discord.js'
 
 import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'
-import { isVoiceCommand, searchWaiting } from './commands/handleVoiceCommands'
+import { isVoiceCommand } from './commands/handleVoiceCommands'
 import { isAdminCommand } from './commands/handleAdminCommands'
 import { getCurrentQueue, updateCurrentQueue } from './commands/classes/queueClass'
-import { searchObj } from './commands/classes/commandClasses'
 
 import { handlePixivUrl } from './commands/text/pixivUrl'
 
@@ -35,8 +34,6 @@ client.on('messageCreate', async message => {
   const configData = server.config
   if (!configData) return sendErrorMessage(message.channel as TextChannel)
   if (message.author.id === configData.botId) return
-
-  if (searchObj.getWaiting) return await searchWaiting(message)
 
   if (message.content.charAt(0) === configData.prefix) {
     if (await isTextCommand(message)) return

@@ -29,7 +29,7 @@ export const insertOneVideo = async (serverId: string, url: string, push = false
     })
 
     return data.insertOneVideo as Music
-  } catch (error) {
+  } catch (error: any) {
     SendError('GraphQl insertOneVideo', error)
     return null
   }
@@ -58,7 +58,7 @@ export const insertPlaylist = async (serverId: string, url: string, push = false
     })
 
     return data.insertPlaylist as Playlist
-  } catch (error) {
+  } catch (error: any) {
     SendError('GraphQl insertPlaylist', error)
     return null
   }
@@ -91,7 +91,7 @@ export const insertSearchVideo = async (serverId: string, query: string, push = 
     })
 
     return data.searchOneVideo as Music
-  } catch (error) {
+  } catch (error: any) {
     SendError('GraphQl insertSearchVideo', error)
     return null
   }
@@ -121,7 +121,7 @@ export const clearQueue = async (serverId: string) => {
     })
 
     return data.clearQueue as Music
-  } catch (error) {
+  } catch (error: any) {
     SendError('GraphQl clearQueue', error)
     return null
   }
@@ -154,7 +154,7 @@ export const updateQueueControls = async (serverId: string, variables: QueueCont
     return {
       updated: true,
     }
-  } catch (error) {
+  } catch (error: any) {
     SendError('updateQueueControls', error)
     return {
       updated: false,
@@ -194,7 +194,7 @@ export const getQueuePage = async (channelId: string, page: number, refetch: boo
     console.log(refetch ? 'page fetched' : 'page fetched with cache')
 
     return data.getPagedQueue.queue as Music[]
-  } catch (error) {
+  } catch (error: any) {
     SendError('getQueuePage', error)
     return null
   }
@@ -234,7 +234,7 @@ export const getQueueTitle = async (channelId: string, queueId: string, page: nu
     }
 
     return data.getPagedQueue as Response
-  } catch (error) {
+  } catch (error: any) {
     if (error.graphQLErrors[0].message === 'INVALID_PAGE') return
     SendError('getQueueTitle', error)
     return null
@@ -266,7 +266,7 @@ export const searchVideos = async (query: string) => {
       },
     })
     return data.searchMusics as VideoApi[]
-  } catch (error) {
+  } catch (error: any) {
     SendError('searchVideos', error)
     return null
   }

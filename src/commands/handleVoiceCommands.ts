@@ -17,11 +17,6 @@ import type { QueueClass } from './classes/queueClass'
 import { joinVoiceChannel } from '@discordjs/voice'
 import { server } from '../bot'
 
-export const searchWaiting = async (message: Message) => {
-  const currentQueue = getCurrentQueue(message.guild!.id)
-  if (message.author.id !== '708065683971506186') await search(message, currentQueue, true)
-}
-
 export const isVoiceCommand = async (message: Message) => {
   const configData = server.config
   if (!configData) return

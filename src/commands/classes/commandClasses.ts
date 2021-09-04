@@ -91,22 +91,3 @@ export class VoiceChannelClass {
 
   // Listeners
 }
-class SearchClass {
-  private queue: VideoBd[] = []
-  private waiting: boolean = false
-
-  set setWaiting(waiting: boolean) {
-    this.waiting = waiting
-  }
-  get getWaiting() {
-    return this.waiting
-  }
-  set setSearchQueue(queue: VideoBd[]) {
-    this.queue = queue
-  }
-  get getSearchQueue() {
-    return this.queue
-  }
-}
-
-export const searchObj = new SearchClass()
