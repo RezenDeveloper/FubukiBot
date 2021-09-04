@@ -30,7 +30,6 @@
     "graphql": "^15.5.1",
     "graphql-tag": "^2.12.5",
     "libsodium-wrappers": "^0.7.9",
-    "moment": "^2.29.1",
     "mongodb": "^3.6.9",
     "node-fetch": "^2.6.1",
     "pixichan": "^1.2.1",
