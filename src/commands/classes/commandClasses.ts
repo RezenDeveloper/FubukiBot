@@ -1,10 +1,10 @@
-import { getVoiceConnection, VoiceConnection, createAudioPlayer, AudioPlayer } from '@discordjs/voice'
-import { VoiceChannel } from 'discord.js'
+import { getVoiceConnection, createAudioPlayer, AudioPlayer } from '@discordjs/voice'
+import { TextChannel, VoiceChannel } from 'discord.js'
 import { insertServer, updateServer } from '../../utils/api/fubuki/server'
-import { SendError, truncate } from '../../utils/utils'
 
 export class VoiceChannelClass {
   private _channel?: VoiceChannel
+  private _textChannel?: TextChannel
   private _player: AudioPlayer
   private _leaveTimeout?: NodeJS.Timeout
   private _subscription?: ZenObservable.Subscription
@@ -12,6 +12,7 @@ export class VoiceChannelClass {
 
   constructor() {
     this._channel = undefined
+    this._textChannel = undefined
     this._player = createAudioPlayer()
     this._leaveTimeout = undefined
     this._lastFetch = undefined
@@ -71,6 +72,14 @@ export class VoiceChannelClass {
     })
   }
 
+  setTextChannel(channel: TextChannel) {
+    this._textChannel = channel
+  }
+
+  get textChannel() {
+    return this._textChannel
+  }
+
   get getChannel() {
     return this._channel
   }
@@ -79,8 +88,9 @@ export class VoiceChannelClass {
   get getLeaveTimeout() {
     return this._leaveTimeout
   }
-  leaveIn(seconds: number) {
+  leaveIn(seconds: number, callback?: () => void) {
     this._leaveTimeout = setTimeout(() => {
+      if (callback) callback()
       this.endConnection()
     }, seconds * 1000)
   }

@@ -1,4 +1,4 @@
-import { Message, VoiceChannel } from 'discord.js'
+import { Message, TextChannel, VoiceChannel } from 'discord.js'
 import { getNickname, hasCommands } from '../utils/utils'
 import {
   play,
@@ -51,6 +51,8 @@ const handleVoiceCommands = async (message: Message, commandObj?: IcommandVoice)
     channel.send(`Please join a voice channel first ${await getNickname(message)}!`)
     return
   }
+
+  currentQueue.setTextChannel(channel as TextChannel)
 
   switch (commands[0]) {
     case 'play':

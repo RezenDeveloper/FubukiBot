@@ -1,6 +1,7 @@
 import { Message, MessageEmbed, MessageReaction, ReactionCollector, TextBasedChannels, User } from 'discord.js'
 import { server } from '../../bot'
 import { insertOneVideo } from '../../utils/api/fubuki/queue'
+import { getCheckEmote } from '../../utils/utils'
 import type { QueueClass } from './queueClass'
 
 export class SearchEmbed {
@@ -105,7 +106,8 @@ export class SearchEmbed {
     }
     const collector = channel.createMessageCollector({ filter, time: 60000 })
 
-    collector.on('collect', async ({ content }) => {
+    collector.on('collect', async msg => {
+      const { content } = msg
       const numbers = content.split(',').map(value => Number(value.trim()))
 
       for (let arrayIndex = 0; arrayIndex < numbers.length; arrayIndex++) {
@@ -124,6 +126,7 @@ export class SearchEmbed {
 
         if (push) channel.send(`**${data.title}** was added to the queue!`)
         else channel.send(`Playing: **${data.title}**`)
+        msg.react(getCheckEmote())
 
         collector.stop()
       }

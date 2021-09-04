@@ -65,10 +65,18 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
       currentQueue.index = newIndex
     } else {
       console.log('last index')
+      currentQueue.leaveIn(60, () => {
+        currentQueue.textChannel?.send({ content: 'Leaving due to inativity' })
+      })
     }
+  })
+
+  player.on(AudioPlayerStatus.Playing, () => {
+    currentQueue.clearLeaveTimeout()
   })
 
   player.on('error', error => {
     SendError('player', error)
+    currentQueue.textChannel?.send({ content: `Sorry i can't play this song, skipping to the next one` })
   })
 }
