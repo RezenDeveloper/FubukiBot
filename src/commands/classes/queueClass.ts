@@ -91,7 +91,7 @@ export class QueueClass extends VoiceChannelClass {
           if (page !== null) this._page = page
         }
         if (paused !== null) {
-          super.player.pause(paused)
+          paused ? super.player.pause() : super.player.unpause()
           this._isPaused = paused
         }
         //if (volume !== null) resource.volume = volume
@@ -130,9 +130,7 @@ export class QueueClass extends VoiceChannelClass {
   }
 
   pause(paused: boolean) {
-    paused ? super.player.pause() : super.player.unpause()
     this.updateControls({ paused })
-    this._isPaused = paused
   }
 
   //Getters and Setters
