@@ -29,12 +29,14 @@ export class SearchEmbed {
   }
 
   async sendEmbed(channel: TextBasedChannels) {
-    const value = this._pagedResult.map(({ seconds, title }, index) => {
-      const time = seconds
-      const minutes = Math.floor(time / 60) > 1 ? Math.floor(time / 60) : '00'
-      const hours = Math.floor(time / 3600) > 1 ? Math.floor(time / 3600) : '00'
-      const actualSeconds = time - Math.floor(time / 60) * 60
-      return `**Song ${index + 1}** ${title} **${hours}:${minutes}:${actualSeconds}**`
+    const value = this._pagedResult.map(({ seconds: time, title }, index) => {
+      const hours = Math.floor(time / 3600)
+      let minutes = Math.floor(time / 60)
+      if (minutes >= 60) minutes = minutes - hours * 60
+      const seconds = time - Math.floor(time / 60) * 60
+      return `**Song ${index + 1}** ${title} **${this.padNumber(hours)}:${this.padNumber(minutes)}:${this.padNumber(
+        seconds
+      )}**`
     })
     this._embed.setFields({ name: 'Videos', value: value.join('\n') })
     this._embed.setFooter(`Page ${this._page} of ${Math.ceil(this._result.length / 10)}`)
@@ -85,10 +87,13 @@ export class SearchEmbed {
 
     this._embed.setFooter(`Page ${page} of ${Math.ceil(this._result.length / 10)}`)
     const value = queue.map(({ seconds: time, title }, index) => {
-      const minutes = Math.floor(time / 60) > 1 ? Math.floor(time / 60) : '00'
-      const hours = Math.floor(time / 3600) > 1 ? Math.floor(time / 3600) : '00'
+      const hours = Math.floor(time / 3600)
+      let minutes = Math.floor(time / 60)
+      if (minutes >= 60) minutes = minutes - hours * 60
       const seconds = time - Math.floor(time / 60) * 60
-      return `**Song ${index + 1 + (page - 1) * 10}** ${title} **${hours}:${minutes}:${seconds}**`
+      return `**Song ${index + 1 + (page - 1) * 10}** ${title} **${this.padNumber(hours)}:${this.padNumber(
+        minutes
+      )}:${this.padNumber(seconds)}**`
     })
     this._embed.setFields({ name: 'Videos', value: value.join('\n') })
     this._message?.edit({ embeds: [this._embed] })
@@ -129,5 +134,9 @@ export class SearchEmbed {
         channel.send('Looks like nobody is responding...')
       }
     })
+  }
+
+  private padNumber(number: number) {
+    return ('0' + number).slice(-2)
   }
 }

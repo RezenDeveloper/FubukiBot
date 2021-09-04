@@ -2,27 +2,6 @@ import gql from 'graphql-tag'
 import { SendError } from '../../utils'
 import { apolloClient } from './fubuki'
 
-export const serverExists = async (serverId: string) => {
-  try {
-    const { data } = await apolloClient.query({
-      query: gql`
-        query {
-          getServer (
-            serverId:"${serverId}"
-          )
-          {
-            serverId
-          }
-        }
-      `,
-    })
-
-    return data.getServer.serverId!! as Boolean
-  } catch (error) {
-    return false
-  }
-}
-
 export const updateServer = async (serverId: string, channelId: string) => {
   try {
     const { data } = await apolloClient.mutate({
@@ -41,7 +20,7 @@ export const updateServer = async (serverId: string, channelId: string) => {
     return {
       updated: true,
     }
-  } catch (error) {
+  } catch (error: any) {
     SendError('updateServer', error)
     return {
       updated: false,
@@ -70,7 +49,7 @@ export const insertServer = async (variables: ServerInsertValues) => {
     return {
       created: true,
     }
-  } catch (error) {
+  } catch (error: any) {
     const exists = error.message.includes('already exists') as boolean
 
     if (exists) {
@@ -136,7 +115,7 @@ export const watchServer = async (serverId: string, onNext: (data: watchResponse
         },
         error: e => SendError('watchServer', e),
       })
-  } catch (error) {
+  } catch (error: any) {
     SendError('watchServer', error)
   }
 }

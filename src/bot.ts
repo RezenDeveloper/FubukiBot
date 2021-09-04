@@ -1,4 +1,4 @@
-import { TextChannel, WSEventType, Client, Intents } from 'discord.js'
+import { TextChannel, Client, Intents } from 'discord.js'
 
 import 'dotenv/config'
 import { isTextCommand } from './commands/handleTextCommands'

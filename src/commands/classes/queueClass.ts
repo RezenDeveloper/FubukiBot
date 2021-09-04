@@ -1,5 +1,4 @@
-import { DMChannel, MessageEmbed, NewsChannel, TextBasedChannels, TextChannel, VoiceChannel } from 'discord.js'
-import { handleAsyncFunc, SendError, sendErrorMessage } from '../../utils/utils'
+import { SendError } from '../../utils/utils'
 import { VoiceChannelClass } from './commandClasses'
 import { playCurrentMusic } from '../voice/playCurrentMusic'
 import { watchServer } from '../../utils/api/fubuki/server'
@@ -119,6 +118,7 @@ export class QueueClass extends VoiceChannelClass {
     this._page = 0
     this._shuffle.isShuffle = false
     super.player.stop()
+    console.log('queue cleaned')
   }
 
   nextIndex() {
@@ -131,6 +131,7 @@ export class QueueClass extends VoiceChannelClass {
 
   pause(paused: boolean) {
     paused ? super.player.pause() : super.player.unpause()
+    this.updateControls({ paused })
     this._isPaused = paused
   }
 
