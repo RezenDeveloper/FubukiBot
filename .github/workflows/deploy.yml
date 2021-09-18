@@ -8,17 +8,18 @@ jobs:
     steps:
       - name: Executing remote ssh commands
         uses: appleboy/ssh-action@master
+        env:
+          TOKEN: '${{ secrets.TOKEN }}'
+          YT_KEY: '${{ secrets.YT_KEY }}'
+          PIXIV_REFRESH_TOKEN: '${{ secrets.PIXIV_REFRESH_TOKEN }}'
+          COOKIES: '${{ secrets.COOKIES }}'
+          HTTP_URL: '${{ secrets.HTTP_URL }}'
+          WS_URL: '${{ secrets.WS_URL }}'
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
-          env:
-            TOKEN: ${{ secrets.TOKEN }}
-            YT_KEY: ${{ secrets.YT_KEY }}
-            PIXIV_REFRESH_TOKEN: ${{ secrets.PIXIV_REFRESH_TOKEN }}
-            COOKIES: ${{ secrets.COOKIES }}
-            HTTP_URL: ${{ secrets.HTTP_URL }}
-            WS_URL: ${{ secrets.WS_URL }}
+          envs: TOKEN,YT_KEY,PIXIV_REFRESH_TOKEN,COOKIES,HTTP_URL,WS_URL
           script: |
             cd fubuki/FubukiBot
 
