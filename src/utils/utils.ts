@@ -36,9 +36,12 @@ export const getNickname = async (message: Message) => {
 export const getPlaylistId = (url: string) => {
   try {
     const id = new URL(url).searchParams.get('list')
+
     const isMix = id?.startsWith('RD')
-    const isWatchLater = id?.startsWith('TLPQMT')
-    if (isMix || isWatchLater) return undefined
+    const isQueue = id?.startsWith('TLPQMT')
+    const isWatchLater = id === 'WL'
+
+    if (isMix || isQueue || isWatchLater) return undefined
     return id
   } catch (err) {
     return undefined
