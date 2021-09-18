@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 name: Deploy
 jobs:
   deploy:
@@ -12,25 +12,38 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
+          env:
+            TOKEN: ${{ secrets.TOKEN }}
+            YT_KEY: ${{ secrets.YT_KEY }}
+            PIXIV_REFRESH_TOKEN: ${{ secrets.PIXIV_REFRESH_TOKEN }}
+            COOKIES: ${{ secrets.COOKIES }}
+            HTTP_URL: ${{ secrets.HTTP_URL }}
+            WS_URL: ${{ secrets.WS_URL }}
           script: |
             cd fubuki/FubukiBot
 
+            echo
+            echo Pull from master
+            echo
+
             git checkout master
             git pull origin master
+
+            echo
+            echo Installing Dependencies
+            echo
+
             yarn
 
-            touch .env
-            > .env
-            echo TOKEN = \"${{ secrets.TOKEN }}\" >> .env
-            echo YT_KEY = \"${{ secrets.YT_KEY }}\" >> .env
-            echo PIXIV_REFRESH_TOKEN = \"${{ secrets.PIXIV_REFRESH_TOKEN }}\" >> .env
-            echo COOKIES = \"${{ secrets.COOKIES }}\" >> .env
-            echo BOT_PASSWORD = \"${{ secrets.BOT_PASSWORD }}\" >> .env
-            echo HTTP_URL = \"${{ secrets.HTTP_URL }}\" >> .env
-            echo WS_URL = \"${{ secrets.WS_URL }}\" >> .env
+            echo
+            echo Building App
+            echo
 
             yarn build
 
+            echo
+            echo Restart Bot
+            echo
+
             pm2 delete fubuki-bot
             pm2 start yarn --name fubuki-bot -- start
-
