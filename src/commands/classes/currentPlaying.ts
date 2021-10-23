@@ -17,9 +17,11 @@ export class CurrentPlaying {
   }
 
   async sendCurrentEmbed(channel: TextBasedChannels) {
+    if(this._currentQueue.length === 0) return { error: 'Queue empty' }
     const message = await channel.send({ embeds: [this.embed] })
     this._message = message
     this.addReactions(message)
+    return { error: undefined }
   }
 
   private async addReactions(message: Message) {
