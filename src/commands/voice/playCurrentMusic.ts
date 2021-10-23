@@ -1,12 +1,12 @@
 import ytdl, { Filter } from 'ytdl-core'
 import { URL } from 'url'
 import type { QueueClass } from '../classes/queueClass'
-import { AudioPlayerStatus, createAudioResource, VoiceConnectionStatus } from '@discordjs/voice'
+import { AudioPlayerError, AudioPlayerStatus, createAudioResource, VoiceConnectionStatus } from '@discordjs/voice'
 import { SendError, sendErrorMessage } from '../../utils/utils'
 
 const COOKIES = process.env.COOKIES
 
-export const playCurrentMusic = (currentQueue: QueueClass) => {
+export const playCurrentMusic = async (currentQueue: QueueClass, retries = 0) => {
   const { connection, player } = currentQueue
   const queue = currentQueue.queue
   const index = currentQueue.index
@@ -44,21 +44,29 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
     },
   })
 
-  player.play(createAudioResource(video))
-  if (currentQueue.events.hasIdle) return
-  currentQueue.events.hasIdle = true
+  player.removeAllListeners()
 
-  console.log('player events setted')
-
+  player.on('error', (audioError) => {
+    if(audioError.message === 'Status code: 403' && retries <= 5) {
+      player.removeAllListeners(AudioPlayerStatus.Idle)
+      setTimeout(() => {
+        playCurrentMusic(currentQueue, retries + 1)
+      }, 200)
+      return
+    }
+    SendError('player after 5 retries', audioError)
+    currentQueue.textChannel?.send({ content: `Sorry i can't play this song, skipping to the next one` })
+  })
+  
   player.on(AudioPlayerStatus.Idle, async () => {
     if (currentQueue.length === 0) return console.log('no queue')
-
+    
     if (currentQueue.shuffle.isShuffle) {
       const { error } = await currentQueue.shuffle.nextShuffleIndex()
       if (error) console.log('last shuffle index')
       return
     }
-
+    
     const newIndex = currentQueue.actualIndex + 1
     if (newIndex < currentQueue.length) {
       console.log('newIndex', newIndex)
@@ -70,13 +78,11 @@ export const playCurrentMusic = (currentQueue: QueueClass) => {
       })
     }
   })
-
+  
   player.on(AudioPlayerStatus.Playing, () => {
     currentQueue.clearLeaveTimeout()
   })
 
-  player.on('error', error => {
-    SendError('player', error)
-    currentQueue.textChannel?.send({ content: `Sorry i can't play this song, skipping to the next one` })
-  })
+  const resource = createAudioResource(video)
+  player.play(resource)
 }
