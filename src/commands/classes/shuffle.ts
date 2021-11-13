@@ -34,6 +34,7 @@ export class Shuffle {
 
   set isShuffle(shuffle: boolean) {
     this._isShuffle = shuffle
+    this.currentQueue.currentPlaying.updateEmbed()
     if (!shuffle) this.clearShuffleList()
   }
 
@@ -46,7 +47,10 @@ export class Shuffle {
     let pass = false
     let index = 0
 
-    if (this._shuffleList.length === queueLenght) return { error: 'This is the last music' }
+    if (this._shuffleList.length === queueLenght) {
+      if (!this.currentQueue.isOnLoop) return { error: 'This is the last music' }
+      this.clearShuffleList()
+    }
 
     while (!pass) {
       index = Math.floor(Math.random() * queueLenght)
