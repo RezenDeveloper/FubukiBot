@@ -20,6 +20,7 @@ export class QueueClass extends VoiceChannelClass {
   private _index: number
   private _page: number
   private _time: number
+  private _isOnLoop: boolean
   private _isPaused: boolean
   private _length: number
   private _queueId: string
@@ -36,6 +37,7 @@ export class QueueClass extends VoiceChannelClass {
     this._page = 0
     this._index = 0
     this._time = 0
+    this._isOnLoop = false
     this._shuffle = new Shuffle(this)
     this._currentPlaying = new CurrentPlaying(this)
     this._queueEmbed = new QueueEmbed(this)
@@ -117,20 +119,31 @@ export class QueueClass extends VoiceChannelClass {
     this._length = 0
     this._page = 0
     this._shuffle.isShuffle = false
+    this._isOnLoop = false
     super.player.stop()
     console.log('queue cleaned')
   }
 
   nextIndex() {
+    const lastIndex = this.actualIndex === (this.length - 1)
+    if (lastIndex && this.isOnLoop) return this.index = 0
     this.updateControls({ index: this.actualIndex + 1 })
   }
 
   prevIndex() {
+    if (this.isOnLoop && this.actualIndex === 0) {
+      return this.updateControls({ index: this.length - 1 })
+    }
     this.updateControls({ index: this.actualIndex - 1 })
   }
 
   pause(paused: boolean) {
     this.updateControls({ paused })
+  }
+
+  loop(isOnLoop: boolean) {
+    this._isOnLoop = isOnLoop
+    this.currentPlaying.updateEmbed()
   }
 
   //Getters and Setters
@@ -183,6 +196,10 @@ export class QueueClass extends VoiceChannelClass {
 
   get isPaused() {
     return this._isPaused
+  }
+
+  get isOnLoop() {
+    return this._isOnLoop
   }
 
   get events() {

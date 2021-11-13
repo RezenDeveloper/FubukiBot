@@ -16,6 +16,7 @@ import { getCurrentQueue } from './classes/queueClass'
 import type { QueueClass } from './classes/queueClass'
 import { joinVoiceChannel } from '@discordjs/voice'
 import { server } from '../bot'
+import { loop } from './voice/loop'
 
 export const isVoiceCommand = async (message: Message) => {
   const configData = server.config
@@ -90,6 +91,9 @@ const handleVoiceCommands = async (message: Message, commandObj?: IcommandVoice)
       break
     case 'leave':
       leave(message, currentQueue)
+      break
+    case 'loop':
+      loop(message)
       break
   }
 }

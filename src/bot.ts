@@ -14,11 +14,15 @@ import { Server } from './commands/classes/server'
 
 const { TOKEN } = process.env
 export const client = new Client({
+  partials: [
+    'CHANNEL'
+  ],
   intents: [
     Intents.FLAGS.GUILDS,
     Intents.FLAGS.GUILD_MESSAGES,
     Intents.FLAGS.GUILD_VOICE_STATES,
     Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+    Intents.FLAGS.DIRECT_MESSAGES
   ],
 })
 
@@ -40,6 +44,7 @@ client.on('messageCreate', async message => {
     if (await isVoiceCommand(message)) return
     if (await isAdminCommand(message)) return
   }
+  console.log('message')
 
   handlePixivUrl(message)
 })

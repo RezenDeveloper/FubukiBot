@@ -28,6 +28,7 @@ export const prev = async (message: Message, currentQueue: QueueClass) => {
     currentQueue.prevIndex()
     message.react(getCheckEmote())
   } else {
+    if (currentQueue.isOnLoop) return currentQueue.prevIndex()
     channel.send(`This is the first song ${name}!`)
     message.react(getErrorEmote())
   }
@@ -57,7 +58,7 @@ export const next = async (message: Message, currentQueue: QueueClass) => {
     return
   }
 
-  if (index + 1 < length) {
+  if ((index + 1 < length) || currentQueue.isOnLoop) {
     currentQueue.nextIndex()
     message.react(getCheckEmote())
   } else {

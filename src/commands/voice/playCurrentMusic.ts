@@ -21,9 +21,6 @@ export const playCurrentMusic = async (currentQueue: QueueClass, retries = 0) =>
   if (currentQueue.isPaused) currentQueue.pause(false)
   currentQueue.currentPlaying.updateEmbed()
 
-  //console.log("index: "+index+" length: "+queue.length)
-  //console.log('index++ '+ (index+1))
-
   //for lives and specific timings: filter=audio
   if (time === '0' && timeParam !== null) {
     time = timeParam
@@ -47,7 +44,7 @@ export const playCurrentMusic = async (currentQueue: QueueClass, retries = 0) =>
   player.removeAllListeners()
 
   player.on('error', (audioError) => {
-    if(audioError.message === 'Status code: 403' && retries <= 5) {
+    if (audioError.message === 'Status code: 403' && retries <= 5) {
       player.removeAllListeners(AudioPlayerStatus.Idle)
       setTimeout(() => {
         playCurrentMusic(currentQueue, retries + 1)
@@ -57,17 +54,28 @@ export const playCurrentMusic = async (currentQueue: QueueClass, retries = 0) =>
     SendError('player after 5 retries', audioError)
     currentQueue.textChannel?.send({ content: `Sorry i can't play this song, skipping to the next one` })
   })
-  
+
   player.on(AudioPlayerStatus.Idle, async () => {
     if (currentQueue.length === 0) return console.log('no queue')
-    
+    const newIndex = currentQueue.actualIndex + 1
+    const lastIndex = currentQueue.actualIndex === (currentQueue.length - 1)
+
     if (currentQueue.shuffle.isShuffle) {
       const { error } = await currentQueue.shuffle.nextShuffleIndex()
-      if (error) console.log('last shuffle index')
+      if (error) {
+        console.log('last shuffle index')
+        currentQueue.leaveIn(60, () => {
+          currentQueue.textChannel?.send({ content: 'Leaving due to inativity' })
+        })
+      }
       return
     }
-    
-    const newIndex = currentQueue.actualIndex + 1
+
+    if (lastIndex && currentQueue.isOnLoop) {
+      currentQueue.index = 0
+      return
+    }
+
     if (newIndex < currentQueue.length) {
       console.log('newIndex', newIndex)
       currentQueue.index = newIndex
@@ -78,7 +86,7 @@ export const playCurrentMusic = async (currentQueue: QueueClass, retries = 0) =>
       })
     }
   })
-  
+
   player.on(AudioPlayerStatus.Playing, () => {
     currentQueue.clearLeaveTimeout()
   })

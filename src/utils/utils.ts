@@ -29,7 +29,7 @@ export const hasCommands = (
 }
 
 export const getNickname = async (message: Message) => {
-  const member = await message.guild!.members.resolve(message.author)
+  const member = await message.guild?.members.resolve(message.author)
   return (member && member.nickname) || message.author.username
 }
 
