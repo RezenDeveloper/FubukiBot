@@ -1,10 +1,14 @@
 {
+  "ts-node": {
+    "files": true
+  },
   "compilerOptions": {
     "target": "es2017",                          
-    "module": "commonjs",                     
+    "module": "commonjs",
     "lib": ["es6"],                             
     "outDir": "./dist",                        
-    "rootDir": "./src",              
+    "rootDir": "./src",
+    "typeRoots": ["./src/*.d.ts"],     
     "removeComments": true,
     "strict": true,                           
     "noImplicitAny": true,                 
