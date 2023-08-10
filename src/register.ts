@@ -45,7 +45,7 @@ export const SetCommandPaths = async () => {
   
   for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder)
-    const commandFiles = fs.readdirSync(commandsPath)
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'))
     for (const file of commandFiles) {
       const filePath = path.join(commandsPath, file)
       const commandFile = require(filePath)
